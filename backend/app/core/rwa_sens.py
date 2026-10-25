@@ -1,10 +1,11 @@
-"""RWA SENS — componentes Delta e Curvatura da classe GIRR (juros livres de risco).
+"""RWA SENS — Delta e Curvatura de juros (GIRR) e Delta de moedas (FX).
 
 Parâmetros conforme a Resolução BCB nº 470/2025 (texto anexo ao Voto BCB nº 42/2025):
 - Delta: vértices do art. 9º, ponderadores dos Anexos I e I-A, correlações do Anexo VII
   e arts. 31, 32, 38–42;
 - Curvatura: arts. 83, 90, 95–98, 100, 102, 108–115. O CVR⁻ usa o termo linear com sinal
-  positivo, como em Basileia (MAR21.5), correção trazida pela Resolução BCB nº 592/2026.
+  positivo, como em Basileia (MAR21.5), correção trazida pela Resolução BCB nº 592/2026;
+- Delta FX: arts. 15, 20, 28, 30 (VI), 48 e 51.
 
 Simplificações: sem Vega, RRAO e demais classes de risco; sem o fator de expectativas de
 índices de preço; as linhas de DV01 são tratadas como lineares (CVR nulo) e só as opções
@@ -107,7 +108,7 @@ def _class_requirement(k: dict[str, float], s: dict[str, float], gamma: float) -
 
 def girr_delta(curves: list[dict], brazil_investment_grade: bool) -> dict:
     """Cada curva: name, currency (categoria), settlement e dv01 por vértice (R$ por +1 bp)."""
-    return girr(curves, [], brazil_investment_grade)
+    return compute(curves, [], [], brazil_investment_grade)
 
 
 # ---------------------------------------------------------------- Curvatura
@@ -179,8 +180,37 @@ def _curvature_class(k: dict[str, float], s: dict[str, float], scenario: str) ->
     return sqrt(max(0.0, total))
 
 
-def girr(curves: list[dict], options: list[dict], brazil_investment_grade: bool) -> dict:
-    """Delta e Curvatura GIRR. Opções sobre DI1 entram no Delta da curva `curve` (em BRL)."""
+# ---------------------------------------------------------------- Delta FX
+
+RW_FX = 0.15  # art. 30, VI: ponderador único para todos os pares
+GAMMA_FX = 0.60  # art. 48: entre pares de moedas
+
+
+def fx_delta(exposures: list[dict]) -> dict:
+    """Delta FX: cada par real × moeda é um fator e uma categoria (arts. 15, 20, 28).
+
+    Para instrumentos lineares, a sensibilidade do art. 20, (V(1,01·FX) − V(FX)) / 0,01,
+    é a própria exposição líquida em reais; as exposições da mesma moeda se somam (art. 21).
+    """
+    ns: dict[str, float] = {}
+    for e in exposures:
+        ns[e["currency"]] = ns.get(e["currency"], 0.0) + e["exposure"]
+    ws = {c: v * RW_FX for c, v in ns.items()}
+    k = {c: abs(w) for c, w in ws.items()}  # um único fator por categoria
+    scenarios = {sc: _class_requirement(k, ws, stress_correlation(GAMMA_FX, sc)) if ws else 0.0
+                 for sc in SCENARIOS}
+    return {
+        "currencies": [{"currency": c, "net_sensitivity": ns[c], "weighted_sensitivity": ws[c]}
+                       for c in sorted(ns)],
+        "scenarios": scenarios,
+        "risk_weight": RW_FX,
+    }
+
+
+def compute(curves: list[dict], options: list[dict], fx: list[dict],
+            brazil_investment_grade: bool) -> dict:
+    """Delta GIRR + Delta FX + Curvatura GIRR por cenário. Opções sobre DI1 entram no Delta
+    da curva `curve` (em BRL)."""
     curves = [dict(c, dv01=list(c["dv01"])) for c in curves]
     option_rows = []
     for o in options:
@@ -210,7 +240,10 @@ def girr(curves: list[dict], options: list[dict], brazil_investment_grade: bool)
         else:
             curvature[scen] = 0.0
 
-    totals = {sc: delta["scenarios"][sc]["delta"] + curvature[sc] for sc in SCENARIOS}
+    fx_result = fx_delta(fx)
+    # Art. 51: os Deltas das classes se somam; depois soma-se a Curvatura, cenário a cenário
+    totals = {sc: delta["scenarios"][sc]["delta"] + fx_result["scenarios"][sc] + curvature[sc]
+              for sc in SCENARIOS}
     binding = max(SCENARIOS, key=lambda sc: totals[sc])
     shock_bps = round(RW_CURV_GIRR * 10000)
     shifts = [x / 10000 for x in sorted(set(range(-300, 301, 25)) | {-shock_bps, shock_bps})]
@@ -229,6 +262,7 @@ def girr(curves: list[dict], options: list[dict], brazil_investment_grade: bool)
             "shock": RW_CURV_GIRR,
             "profile": profile if options else [],
         },
+        "fx": fx_result,
         "totals": totals,
         "binding_scenario": binding,
         "requirement": totals[binding],

@@ -22,7 +22,7 @@ export const NAV = [
   { group: "Capital", items: [
     { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },
     { to: "/capital/irb", label: "Modelo IRB", el: <IRBPage /> },
-    { to: "/capital/rwa-sens", label: "RWA SENS: Delta GIRR", el: <RWASensPage /> },
+    { to: "/capital/rwa-sens", label: "RWA SENS: GIRR e FX", el: <RWASensPage /> },
   ] },
   { group: "Liquidez", items: [
     { to: "/liquidez/lcr", label: "LCR", el: <LCRPage /> },

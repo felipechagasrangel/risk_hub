@@ -27,17 +27,24 @@ class DIOption(BaseModel):
     underlying_du: int = Field(description="Vencimento do DI1 subjacente; deve ser um vértice")
 
 
-class GIRRRequest(BaseModel):
-    curves: list[Curve]
+class FXExposure(BaseModel):
+    name: str
+    currency: str = Field(min_length=3, max_length=3, description="Moeda estrangeira do par contra o real")
+    exposure: float = Field(description="Exposição líquida em R$ (comprado na moeda = positivo)")
+
+
+class SensRequest(BaseModel):
+    curves: list[Curve] = []
     options: list[DIOption] = []
+    fx: list[FXExposure] = []
     brazil_investment_grade: bool = False
 
 
-@router.post("/rwa-sens/girr-delta")
-def compute_girr_delta(req: GIRRRequest):
+@router.post("/rwa-sens")
+def compute_rwa_sens(req: SensRequest):
     n = len(rwa_sens.VERTICES_DU)
-    if not req.curves:
-        raise HTTPException(422, "Inclua pelo menos uma curva")
+    if any(f.currency.upper() == "BRL" for f in req.fx):
+        raise HTTPException(422, "O real é a moeda de referência dos pares FX")
     if any(len(c.dv01) != n for c in req.curves):
         raise HTTPException(422, f"Cada curva precisa de {n} sensibilidades, uma por vértice")
     for o in req.options:
@@ -45,4 +52,6 @@ def compute_girr_delta(req: GIRRRequest):
             raise HTTPException(422, f"{o.name}: o DI1 subjacente deve vencer num vértice posterior à opção")
     curves = [{**c.model_dump(), "currency": c.currency.upper(), "settlement": c.settlement.upper()}
               for c in req.curves]
-    return rwa_sens.girr(curves, [o.model_dump() for o in req.options], req.brazil_investment_grade)
+    fx = [{**f.model_dump(), "currency": f.currency.upper()} for f in req.fx]
+    return rwa_sens.compute(curves, [o.model_dump() for o in req.options], fx,
+                            req.brazil_investment_grade)

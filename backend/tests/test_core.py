@@ -121,16 +121,36 @@ def test_curvature_long_option_needs_no_capital_and_short_does():
     long_up, long_down = rwa_sens.cvr(DI_CALL)
     assert long_up < 0 and long_down < 0  # comprado em convexidade: ganha além do linear
     short = {**DI_CALL, "quantity": -1}
-    res = rwa_sens.girr([], [short], False)
+    res = rwa_sens.compute([], [short], [], False)
     assert res["curvature"]["scenarios"]["medium"] > 0
-    long_res = rwa_sens.girr([], [DI_CALL], False)
+    long_res = rwa_sens.compute([], [DI_CALL], [], False)
     assert long_res["curvature"]["scenarios"]["medium"] == 0
 
 
 def test_option_delta_merges_into_named_curve():
     dv01 = [0.0] * 11
     curves = [{"name": "Pré", "currency": "BRL", "settlement": "BRL", "dv01": dv01}]
-    res = rwa_sens.girr(curves, [DI_CALL], False)
+    res = rwa_sens.compute(curves, [DI_CALL], [], False)
     assert len(res["curves"]) == 1
     ws_2y = res["curves"][0]["weighted_sensitivities"][4]
     assert isclose(ws_2y, rwa_sens.option_dv01(DI_CALL) / 0.0001 * 0.028)
+
+
+def test_fx_delta_single_currency_is_15_percent_of_exposure():
+    res = rwa_sens.fx_delta([{"currency": "USD", "exposure": 1_000_000}])
+    assert all(isclose(v, 150_000) for v in res["scenarios"].values())
+
+
+def test_fx_delta_opposite_positions_bind_in_low_correlation():
+    res = rwa_sens.fx_delta([{"currency": "USD", "exposure": 1_000_000},
+                             {"currency": "EUR", "exposure": -1_000_000}])
+    sc = res["scenarios"]
+    # sqrt(2 × 150k² × (1 − γ)): menor γ, maior requerimento
+    assert isclose(sc["medium"], 150_000 * (2 * (1 - 0.60)) ** 0.5)
+    assert sc["low"] > sc["medium"] > sc["high"]
+
+
+def test_compute_sums_fx_delta_into_totals():
+    fx = [{"currency": "USD", "exposure": 1_000_000}]
+    res = rwa_sens.compute([], [], fx, False)
+    assert isclose(res["totals"]["medium"], 150_000)

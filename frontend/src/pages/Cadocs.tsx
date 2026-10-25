@@ -166,7 +166,7 @@ export default function Cadocs() {
         <li><strong>RRAO</strong>: adicional para riscos residuais (por exemplo, subjacentes exóticos) não captados pelas sensibilidades.</li>
       </ul>
       <p>
-        👉 Experimente na <Link to="/capital/rwa-sens">calculadora do Delta GIRR</Link>, que reproduz os vértices,
+        👉 Experimente na <Link to="/capital/rwa-sens">calculadora do RWA SENS</Link> (Delta e Curvatura GIRR, Delta FX), que reproduz os vértices,
         ponderadores e correlações da norma.
       </p>
       <Callout title="Conexões com o que você já viu aqui">

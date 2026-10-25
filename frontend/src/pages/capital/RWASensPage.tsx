@@ -24,8 +24,16 @@ type Resp = {
     scenarios: Record<Scenario, number>;
     profile: { shift_bps: number; value: number; linear: number }[];
   };
+  fx: {
+    currencies: { currency: string; net_sensitivity: number; weighted_sensitivity: number }[];
+    scenarios: Record<Scenario, number>;
+    risk_weight: number;
+  };
   totals: Record<Scenario, number>;
 };
+
+type FXRow = { name: string; currency: string; exposure: number };
+const FX_CURRENCIES: [string, string][] = ["USD", "EUR", "GBP", "JPY", "CHF", "CNY", "ARS"].map((c) => [c, c]);
 
 type OptionRow = {
   name: string; curve: string; kind: "call" | "put"; quantity: number;
@@ -53,6 +61,11 @@ export default function RWASensPage() {
     { name: "Calls de taxa DI1 vendidas", curve: "Pré (DI e prefixados)", kind: "call", quantity: -500,
       strike: 0.145, rate: 0.14, vol: 0.02, expiry_du: 252, underlying_du: "504" },
   ]);
+  const [fx, setFx] = useState<FXRow[]>([
+    { name: "Treasuries e cupom cambial", currency: "USD", exposure: 3_000_000 },
+    { name: "Captação em euro", currency: "EUR", exposure: -1_200_000 },
+    { name: "Bonds em libra", currency: "GBP", exposure: 400_000 },
+  ]);
   const [investmentGrade, setInvestmentGrade] = useState(false);
   const [heatScenario, setHeatScenario] = useState<Scenario>("medium");
 
@@ -60,8 +73,9 @@ export default function RWASensPage() {
     name: r.name, currency: r.currency, settlement: r.settlement,
     dv01: VERTICES.map((_, i) => r[`d${i}`]),
   }));
-  const { data, error } = useCompute<Resp>("/capital/rwa-sens/girr-delta", {
+  const { data, error } = useCompute<Resp>("/capital/rwa-sens", {
     curves,
+    fx,
     options: options.map((o) => ({ ...o, underlying_du: Number(o.underlying_du) })),
     brazil_investment_grade: investmentGrade,
   });
@@ -76,7 +90,7 @@ export default function RWASensPage() {
 
   return (
     <>
-      <h1>RWA SENS: Delta de juros (GIRR)</h1>
+      <h1>RWA SENS: juros (GIRR) e moedas (FX)</h1>
       <p className="lead">
         A partir de 2027, o capital de risco de mercado dos bancos S1–S3 passa a ser calculado por
         <strong> sensibilidades</strong>. Esta página reconstrói, passo a passo, a peça mais importante
@@ -159,7 +173,7 @@ export default function RWASensPage() {
       <Formula tex={String.raw`\text{RWA}_{\text{SENS}} = \frac{1}{8\%}\,\max\big(R_{\text{alta}}, R_{\text{média}}, R_{\text{baixa}}\big), \qquad R = \Delta + \text{Vega} + \text{Curvatura} \text{ (todas as classes)}`} />
       <p className="muted" style={{ fontSize: 14 }}>
         Na conta completa, o máximo é tomado depois de somar todas as classes e componentes em cada cenário.
-        Aqui somamos Delta e Curvatura GIRR por cenário e depois tomamos o máximo.
+        Aqui somamos, em cada cenário, Delta GIRR + Delta FX + Curvatura GIRR e depois tomamos o máximo.
       </p>
 
       <h2>6. Curvatura: o que o Delta não vê</h2>
@@ -189,8 +203,31 @@ export default function RWASensPage() {
         do prêmio — o objetivo é mostrar a forma da curva de valor, não precificar para negociação.
       </Callout>
 
-      <h2>7. Laboratório</h2>
-      <Lab title="Calcule o Delta e a Curvatura GIRR de uma carteira">
+      <h2>7. Delta FX: o risco de câmbio</h2>
+      <p>
+        Na classe FX, cada <strong>par real × moeda estrangeira</strong> é um fator de risco e também uma categoria
+        própria (arts. 15 e 28). A sensibilidade é a variação de valor para uma alta de 1% no câmbio, escalada para 100%:
+      </p>
+      <Formula tex={String.raw`S_{i,k} = \frac{V_i(1{,}01 \cdot FX_k,\; X_i) - V_i(FX_k,\; X_i)}{0{,}01}`} />
+      <p>
+        Para um instrumento linear, isso é simplesmente a <strong>exposição líquida em reais</strong>: R$ 3 milhões
+        comprados em dólar têm sensibilidade de R$ 3 milhões. O ponderador é <strong>único, de 15%</strong>, para todos
+        os pares (art. 30, VI) — o BCB não adotou a redução de Basileia (15%/√2) para pares líquidos.
+      </p>
+      <Formula tex={String.raw`WS_k = 15\% \times NS_k, \qquad K_k = |WS_k|, \qquad \Delta_{FX} = \sqrt{\sum_k K_k^2 + \sum_k \sum_{c\neq k} \gamma\, S_k\, S_c}, \quad \gamma = 60\%`} />
+      <p>
+        Os Deltas das classes se <strong>somam</strong> em cada cenário (art. 51): não há diversificação entre juros
+        e câmbio. Um título em dólar gera as duas coisas — sensibilidade à curva de juros em dólar (GIRR) e
+        exposição ao par USD/BRL (FX).
+      </p>
+      <Callout title="Exclusão estrutural">
+        O art. 125 permite excluir do Delta FX a exposição de investimentos no exterior (subsidiárias, dependências,
+        afiliadas) mantida de propósito para proteger o índice de capital contra a variação cambial — desde que
+        haja política documentada, mantida por pelo menos seis meses, e limitada ao montante que estabiliza o índice.
+      </Callout>
+
+      <h2>8. Laboratório</h2>
+      <Lab title="Calcule o Delta GIRR, a Curvatura GIRR e o Delta FX de uma carteira">
         <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
           Informe o DV01 de cada curva por vértice: a variação de valor, em R$, para +1 bp. Negativo = perde com alta de juros.
         </p>
@@ -228,6 +265,21 @@ export default function RWASensPage() {
             { label: "CVR⁻", values: data.curvature.options.map((o) => fmtMoney(o.cvr_down)) },
           ] : []}
         />
+        <h3>Exposições cambiais (Delta FX)</h3>
+        <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
+          Exposição líquida em reais em cada moeda estrangeira; positivo = comprado na moeda (ganha se o real se desvalorizar).
+        </p>
+        <EditableTable<FXRow>
+          rows={fx}
+          onChange={setFx}
+          newRow={() => ({ name: "Nova exposição", currency: "USD", exposure: 100_000 })}
+          columns={[
+            { key: "name", label: "Exposição", type: "text", width: 220 },
+            { key: "currency", label: "Moeda", type: "select", options: FX_CURRENCIES, width: 100 },
+            { key: "exposure", label: "Exposição líquida (R$)", type: "number", width: 160 },
+          ]}
+          computed={[{ label: "WS = 15% × NS", values: fx.map((f) => fmtMoney(f.exposure * 0.15)) }]}
+        />
         <div className="grid" style={{ marginTop: 16 }}>
           <SelectField label="Rating do Brasil" value={investmentGrade ? "ig" : "hy"} onChange={(v) => setInvestmentGrade(v === "ig")}
             options={[["hy", "Abaixo de BBB− (fator 1,0)"], ["ig", "BBB− ou melhor (fator 0,7071)"]]} />
@@ -246,15 +298,18 @@ export default function RWASensPage() {
           <li><strong>Hedge de delta não elimina a curvatura:</strong> some ao vértice de 2 anos da curva Pré o DV01 da opção com sinal trocado (cerca de +1.345). O delta da opção some, mas o CVR⁺ continua lá — vendido em opção é vendido em convexidade.</li>
           <li>Troque a quantidade da opção para +500 (comprado): os CVR ficam negativos e a Curvatura vai a zero.</li>
           <li>Aproxime o strike da taxa (opção no dinheiro) e veja os dois CVR ficarem parecidos; afaste o strike e a curvatura cai.</li>
+          <li><strong>FX:</strong> comprado em dólar e vendido em euro é um hedge parcial (γ = 60%) — o Delta FX fica bem abaixo de 15% da soma das exposições, e o pior cenário é o de correlação baixa. Mude o euro para comprado e o pior passa a ser o de correlação alta.</li>
+          <li>Com uma única moeda estrangeira, o Delta FX é exatamente 15% da exposição, igual nos três cenários.</li>
         </ul>
       </Callout>
 
       <RegNote>
         <p>
-          Parâmetros da Resolução BCB nº 470/2025 (texto anexo ao Voto BCB nº 42/2025): vértices do art. 9º,
-          ponderadores dos Anexos I e I-A, correlações do Anexo VII e arts. 31, 32 e 38 a 42. A calculadora
-          ignora o fator de expectativas de índices de preço (ponderador 1,6% e correlação de 40%), a Vega e
-          a Curvatura. Confira sempre o texto vigente, incluindo os ajustes da Resolução BCB nº 592/2026.
+          Parâmetros da Resolução BCB nº 470/2025 (texto anexo ao Voto BCB nº 42/2025): Delta GIRR (art. 9º,
+          Anexos I, I-A e VII, arts. 31, 32 e 38 a 42), Curvatura GIRR (arts. 83, 90, 95 a 115) e Delta FX
+          (arts. 15, 20, 28, 30, 48 e 51). Ficam de fora o fator de expectativas de índices de preço, a Vega, a
+          Curvatura FX, as demais classes e o RRAO. Confira sempre o texto vigente, incluindo os ajustes da
+          Resolução BCB nº 592/2026.
         </p>
       </RegNote>
     </>
@@ -268,7 +323,7 @@ function Results({ data, heatScenario, setHeatScenario }: {
   const curv = data.curvature;
   const bars = scen.map((s) => ({
     s, label: SCEN_LABEL[s] + (s === data.binding_scenario ? " ★" : ""),
-    delta: data.scenarios[s].delta, curvature: curv.scenarios[s], total: data.totals[s],
+    delta: data.scenarios[s].delta, fx: data.fx.scenarios[s], curvature: curv.scenarios[s], total: data.totals[s],
   }));
   const currencies = data.scenarios.medium.categories.map((c) => c.currency);
 
@@ -278,20 +333,21 @@ function Results({ data, heatScenario, setHeatScenario }: {
         {scen.map((s) => (
           <Stat key={s} label={SCEN_LABEL[s]} value={fmtMoney(data.totals[s])}
             sub={<>
-              Δ {fmtMoney(data.scenarios[s].delta)} + Curv. {fmtMoney(curv.scenarios[s])}
+              Δ GIRR {fmtMoney(data.scenarios[s].delta)} + Δ FX {fmtMoney(data.fx.scenarios[s])} + Curv. {fmtMoney(curv.scenarios[s])}
               {s === data.binding_scenario && (
                 <div style={{ marginTop: 4 }}><span className="badge"><span className="dot" style={{ background: "var(--series-1)" }} />Define o capital</span></div>
               )}
             </>} />
         ))}
-        <Stat label="RWA SENS (Delta + Curvatura GIRR)" value={fmtMoney(data.rwa)} sub={`= ${fmtMoney(data.requirement)} ÷ 8%`} />
+        <Stat label="RWA SENS (GIRR + FX)" value={fmtMoney(data.rwa)} sub={`= ${fmtMoney(data.requirement)} ÷ 8%`} />
       </div>
 
-      <div className="chart-title">Requerimento GIRR por cenário de correlação</div>
-      <div className="chart-sub">Delta e Curvatura somados em cada cenário; vale o maior total (★).</div>
+      <div className="chart-title">Requerimento por cenário de correlação</div>
+      <div className="chart-sub">Delta GIRR, Delta FX e Curvatura GIRR somados em cada cenário; vale o maior total (★).</div>
       <Legend items={[
-        { label: "Delta", color: "var(--series-1)", box: true },
-        { label: "Curvatura", color: "var(--series-2)", box: true },
+        { label: "Delta GIRR", color: "var(--series-1)", box: true },
+        { label: "Delta FX", color: "var(--series-2)", box: true },
+        { label: "Curvatura GIRR", color: "var(--series-3)", box: true },
       ]} />
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={bars} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
@@ -300,14 +356,41 @@ function Results({ data, heatScenario, setHeatScenario }: {
           <YAxis type="category" dataKey="label" {...axisProps} width={140} />
           <Tooltip cursor={{ fill: "var(--surface-2)" }} content={({ active, payload }) =>
             active && payload?.length ? <TooltipBox title={payload[0].payload.label} rows={[
-              { label: "Delta", value: fmtMoney(payload[0].payload.delta), color: "var(--series-1)" },
-              { label: "Curvatura", value: fmtMoney(payload[0].payload.curvature), color: "var(--series-2)" },
+              { label: "Delta GIRR", value: fmtMoney(payload[0].payload.delta), color: "var(--series-1)" },
+              { label: "Delta FX", value: fmtMoney(payload[0].payload.fx), color: "var(--series-2)" },
+              { label: "Curvatura GIRR", value: fmtMoney(payload[0].payload.curvature), color: "var(--series-3)" },
               { label: "Total", value: fmtMoney(payload[0].payload.total) },
             ]} /> : null} />
           <Bar dataKey="delta" stackId="r" fill="var(--series-1)" stroke="var(--surface)" strokeWidth={2} maxBarSize={28} isAnimationActive={false} />
-          <Bar dataKey="curvature" stackId="r" fill="var(--series-2)" stroke="var(--surface)" strokeWidth={2} maxBarSize={28} isAnimationActive={false} />
+          <Bar dataKey="fx" stackId="r" fill="var(--series-2)" stroke="var(--surface)" strokeWidth={2} maxBarSize={28} isAnimationActive={false} />
+          <Bar dataKey="curvature" stackId="r" fill="var(--series-3)" stroke="var(--surface)" strokeWidth={2} maxBarSize={28} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
+
+      {data.fx.currencies.length > 0 && (
+        <>
+          <h3>Delta FX por moeda</h3>
+          <div className="table-wrap">
+            <table className="data">
+              <thead><tr><th>Par</th><th className="num">NS (exposição)</th><th className="num">WS = 15% × NS</th></tr></thead>
+              <tbody>
+                {data.fx.currencies.map((c) => (
+                  <tr key={c.currency}>
+                    <td>{c.currency}/BRL</td>
+                    <td className="num">{fmtMoney(c.net_sensitivity)}</td>
+                    <td className="num">{fmtMoney(c.weighted_sensitivity)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="muted" style={{ fontSize: 13 }}>
+            Soma simples dos |WS|: {fmtMoney(data.fx.currencies.reduce((a, c) => a + Math.abs(c.weighted_sensitivity), 0))}.
+            Δ FX com correlações — média: {fmtMoney(data.fx.scenarios.medium)}, alta: {fmtMoney(data.fx.scenarios.high)},
+            baixa: {fmtMoney(data.fx.scenarios.low)}.
+          </p>
+        </>
+      )}
 
       {curv.profile.length > 0 && <CurvatureChart data={data} />}
 
