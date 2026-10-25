@@ -5,7 +5,8 @@ import {
 import { useCompute } from "../../api";
 import { axisProps, gridProps, TooltipBox } from "../../components/chart";
 import { EditableTable } from "../../components/EditableTable";
-import { Callout, Formula, Lab, Legend, M, NumField, PassBadge, SelectField, Stat } from "../../components/ui";
+import { Link } from "react-router-dom";
+import { Callout, Formula, Lab, Legend, M, NumField, PassBadge, RegNote, SelectField, Stat } from "../../components/ui";
 import { fmtCompact, fmtMoney, fmtNum, fmtPct } from "../../format";
 
 type Position = { name: string; side: "asset" | "liability"; amount: number; rate: number; repricing: number };
@@ -122,6 +123,17 @@ export default function IRRBBPage() {
         O <strong>teste de outlier</strong> supervisório sinaliza o banco cuja pior queda de EVE nos seis
         cenários supera <strong>15% do Nível I</strong>.
       </p>
+      <RegNote>
+        <p>
+          As métricas de IRRBB (ΔEVE e ΔNII por cenário) são reportadas no <Link to="/cadocs#drm">DRM (2060)</Link>,
+          junto com o risco de mercado.
+        </p>
+        <p>
+          A Resolução BCB nº 592/2026 substituiu o Anexo I da Circular 3.876 e elevou vários choques de moedas
+          estrangeiras; os do real não mudaram. Os presets de USD e EUR do laboratório seguem a calibração
+          original do BCBS — para uso real, confira o anexo vigente.
+        </p>
+      </RegNote>
 
       <h2>4. Laboratório</h2>
       <Lab title="Choques de juros sobre o balanço">
@@ -159,7 +171,7 @@ export default function IRRBBPage() {
               <SelectField label="Moeda (calibração)" value={currency} onChange={(c) => {
                 setCurrency(c);
                 if (c !== "custom") setShocks(SHOCK_PRESETS[c]);
-              }} options={[["BRL", "Real (BRL)"], ["USD", "Dólar (USD)"], ["EUR", "Euro (EUR)"], ["custom", "Personalizado"]]} />
+              }} options={[["BRL", "Real (BRL)"], ["USD", "Dólar (USD, BCBS original)"], ["EUR", "Euro (EUR, BCBS original)"], ["custom", "Personalizado"]]} />
               <NumField label="Choque paralelo" percent value={shocks.parallel} step={0.25}
                 onChange={(v) => { setCurrency("custom"); setShocks({ ...shocks, parallel: v }); }} />
               <NumField label="Choque curto" percent value={shocks.short} step={0.25}

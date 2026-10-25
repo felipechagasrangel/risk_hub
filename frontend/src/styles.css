@@ -120,6 +120,8 @@ p, li { max-width: 780px; }
   max-width: 780px;
 }
 .callout strong:first-child { display: block; margin-bottom: 4px; }
+.callout.reg { background: none; border: 1px dashed var(--axis); }
+.callout.reg p { margin: 4px 0 0; }
 
 .formula { overflow-x: auto; padding: 4px 0; }
 

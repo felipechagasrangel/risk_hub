@@ -4,7 +4,8 @@ import {
 } from "recharts";
 import { useCompute } from "../../api";
 import { axisProps, gridProps, TooltipBox } from "../../components/chart";
-import { Callout, Formula, Lab, Legend, M, NumField, SelectField, Stat, StatusBadge } from "../../components/ui";
+import { Link } from "react-router-dom";
+import { Callout, Formula, Lab, Legend, M, NumField, RegNote, SelectField, Stat, StatusBadge } from "../../components/ui";
 import { fmtCompact, fmtMoney, fmtPct } from "../../format";
 
 type Method = { var: number; es: number };
@@ -157,6 +158,16 @@ export default function VaRPage() {
         multiplicador de capital crescente.
       </p>
       {data && <Backtest data={data} confidence={p.confidence} />}
+
+      <RegNote>
+        <p>
+          As exposições a fatores de risco de mercado vão no <Link to="/cadocs#drm">DRM (2060)</Link>, e o RWA de
+          mercado é acompanhado diariamente no <Link to="/cadocs#ddr">DDR (2011)</Link>. Importante: o capital
+          regulatório de mercado no Brasil não é o VaR — hoje é a soma de componentes padronizados (RWA<sub>JUR</sub>,
+          RWA<sub>ACS</sub>, RWA<sub>CAM</sub>…) e, a partir de 2027, o <Link to="/cadocs#rwasens">RWA SENS</Link>.
+          O VaR continua central na gestão interna de riscos e nos limites.
+        </p>
+      </RegNote>
     </>
   );
 }

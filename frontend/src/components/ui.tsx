@@ -72,6 +72,11 @@ export function Callout({ title, children }: { title: string; children: ReactNod
   return <div className="callout"><strong>{title}</strong>{children}</div>;
 }
 
+/** Liga o conceito da página ao documento regulatório (CADOC) em que ele é reportado. */
+export function RegNote({ children }: { children: ReactNode }) {
+  return <div className="callout reg"><strong>📄 No reporte ao BCB</strong>{children}</div>;
+}
+
 export function Lab({ title, children }: { title: string; children: ReactNode }) {
   return <div className="card lab"><div className="lab-title">🧪 {title}</div>{children}</div>;
 }

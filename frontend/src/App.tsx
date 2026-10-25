@@ -10,6 +10,7 @@ import LCRPage from "./pages/liquidity/LCRPage";
 import NSFRPage from "./pages/liquidity/NSFRPage";
 import IRRBBPage from "./pages/irrbb/IRRBBPage";
 import Glossary from "./pages/Glossary";
+import Cadocs from "./pages/Cadocs";
 
 export const NAV = [
   { group: "Risco de Mercado", items: [
@@ -31,8 +32,12 @@ export const NAV = [
 ];
 
 export default function App() {
-  const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    const target = hash && document.getElementById(hash.slice(1));
+    if (target) target.scrollIntoView();
+    else window.scrollTo(0, 0);
+  }, [pathname, hash]);
 
   return (
     <div className="layout">
@@ -46,12 +51,14 @@ export default function App() {
           </div>
         ))}
         <div className="group">Referência</div>
+        <NavLink to="/cadocs">CADOCs</NavLink>
         <NavLink to="/glossario">Glossário</NavLink>
       </nav>
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
           {NAV.flatMap((g) => g.items).map((i) => <Route key={i.to} path={i.to} element={i.el} />)}
+          <Route path="/cadocs" element={<Cadocs />} />
           <Route path="/glossario" element={<Glossary />} />
         </Routes>
       </main>

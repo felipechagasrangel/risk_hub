@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useCompute } from "../../api";
 import { EditableTable } from "../../components/EditableTable";
-import { Callout, Formula, Lab, PassBadge, Stat } from "../../components/ui";
+import { Link } from "react-router-dom";
+import { Callout, Formula, Lab, PassBadge, RegNote, Stat } from "../../components/ui";
 import { fmtMoney, fmtPct } from "../../format";
 
 type HQLA = { name: string; amount: number; level: "1" | "2A" | "2B" };
@@ -48,6 +49,13 @@ export default function LCRPage() {
         O numerador é o “colchão”; o denominador é quanto dinheiro sai num cenário de estresse
         padronizado, que combina um rebaixamento do banco com uma corrida parcial de depósitos.
       </p>
+      <RegNote>
+        <p>
+          O LCR (obrigatório para o S1, conforme a Resolução CMN nº 4.401/2015) e as informações de exposição ao
+          risco de liquidez são enviados mensalmente no <Link to="/cadocs#drl">DRL (2160)</Link>: estoque de ativos
+          líquidos, saídas e entradas de caixa.
+        </p>
+      </RegNote>
 
       <h2>2. O numerador: HQLA</h2>
       <p>

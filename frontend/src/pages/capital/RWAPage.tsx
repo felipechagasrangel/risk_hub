@@ -3,7 +3,8 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { useCompute } from "../../api";
 import { axisProps, gridProps, TooltipBox } from "../../components/chart";
 import { EditableTable } from "../../components/EditableTable";
-import { Callout, Formula, Lab, Legend, M, NumField, PassBadge, Stat } from "../../components/ui";
+import { Link } from "react-router-dom";
+import { Callout, Formula, Lab, Legend, M, NumField, PassBadge, RegNote, Stat } from "../../components/ui";
 import { fmtMoney, fmtPct } from "../../format";
 
 type Exposure = { name: string; amount: number; risk_weight: number; ccf: number };
@@ -78,9 +79,18 @@ export default function RWAPage() {
         calculadas como exigência de capital e convertidas em RWA multiplicando por 12,5 (= 1/8%):
       </p>
       <Formula tex={String.raw`\text{RWA} = \text{RWA}_{\text{CPAD}} + 12{,}5 \times K_{\text{mercado}} + 12{,}5 \times K_{\text{operacional}}`} />
-      <p className="muted" style={{ fontSize: 14 }}>
-        No Brasil (Resolução CMN 4.958 e circulares do BCB): RWA<sub>CPAD</sub>, RWA<sub>MPAD</sub> e RWA<sub>OPAD</sub>.
-      </p>
+      <RegNote>
+        <p>
+          No Brasil (Resolução CMN nº 4.958/2021) as parcelas são RWA<sub>CPAD</sub>, RWA<sub>MPAD</sub> e RWA<sub>OPAD</sub>.
+          O PR, os RWAs e os índices vão no <Link to="/cadocs#dlo">DLO (2061)</Link>, com acompanhamento diário das
+          parcelas no <Link to="/cadocs#ddr">DDR (2011)</Link>. Os limites de cada instituição individual do
+          conglomerado vão no <Link to="/cadocs#dli">DLI (2062)</Link>.
+        </p>
+        <p>
+          A partir de jan/2027, para S1–S3, os componentes de mercado da RWA<sub>MPAD</sub> (RWA<sub>JUR1–4</sub>,
+          RWA<sub>ACS</sub>, RWA<sub>COM</sub>, RWA<sub>CAM</sub>) são substituídos pelo <Link to="/cadocs#rwasens">RWA SENS</Link>.
+        </p>
+      </RegNote>
 
       <h2>3. O capital e os índices</h2>
       <p>O capital regulatório (Patrimônio de Referência, PR) tem camadas por qualidade de absorção de perdas:</p>

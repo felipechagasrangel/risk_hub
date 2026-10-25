@@ -3,7 +3,8 @@ import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Toolt
 import { useCompute } from "../../api";
 import { axisProps, gridProps, TooltipBox } from "../../components/chart";
 import { EditableTable } from "../../components/EditableTable";
-import { Callout, Formula, Lab, Legend, M, NumField, Stat } from "../../components/ui";
+import { Link } from "react-router-dom";
+import { Callout, Formula, Lab, Legend, M, NumField, RegNote, Stat } from "../../components/ui";
 import { fmtCompact, fmtMoney, fmtNum, fmtPct } from "../../format";
 
 type Factor = "equity" | "fx" | "rates";
@@ -68,6 +69,13 @@ export default function StressPage() {
           <p style={{ margin: 0 }}>Inverte a pergunta: qual cenário causaria uma perda inaceitável? Revela as vulnerabilidades da carteira.</p>
         </div>
       </div>
+
+      <RegNote>
+        <p>
+          Além dos testes internos, o BCB fornece cenários próprios de estresse (TEBU). As informações do Icaap e
+          desses testes vão no documento 2090. Veja os demais documentos em <Link to="/cadocs">CADOCs</Link>.
+        </p>
+      </RegNote>
 
       <h2>3. Reavaliando a carteira</h2>
       <p>Ações e câmbio respondem linearmente ao choque. Para títulos prefixados, usamos duration e convexidade:</p>
