@@ -1,60 +1,49 @@
 import { Link } from "react-router-dom";
+import { Icon } from "../components/icons";
+import { NAV } from "../nav";
 
-const AREAS = [
-  {
-    title: "Fundamentos",
-    to: "/fundamentos/curva-mtm",
-    text: "Quanto vale cada posição? Na curva e a mercado, derivativos, categorias contábeis, hierarquia de preços, carteira de negociação × bancária e um catálogo de instrumentos.",
-  },
-  {
-    title: "Risco de Mercado",
-    to: "/mercado/var",
-    text: "Quanto posso perder com movimentos de preços, taxas e moedas? VaR paramétrico, histórico e Monte Carlo, Expected Shortfall, backtesting, diversificação, stress testing e o capital de mercado por sensibilidades (RWA SENS).",
-  },
-  {
-    title: "Capital",
-    to: "/capital/rwa",
-    text: "Quanto capital próprio o banco precisa ter para absorver perdas inesperadas? RWA, fatores de ponderação, Índice de Basileia, buffers e a fórmula IRB.",
-  },
-  {
-    title: "Liquidez",
-    to: "/liquidez/lcr",
-    text: "O banco sobrevive a uma corrida de 30 dias? E sua estrutura de funding é estável em 1 ano? LCR, HQLA, run-off e NSFR.",
-  },
-  {
-    title: "IRRBB",
-    to: "/irrbb",
-    text: "Como a variação dos juros afeta o valor econômico (ΔEVE) e a margem financeira (ΔNII) da carteira bancária? Gap de repricing e os 6 cenários de choque de Basileia.",
-  },
-];
+const DESCRIPTIONS: Record<string, string> = {
+  "Fundamentos": "Quanto vale cada posição? Na curva e a mercado, derivativos, contabilidade, hierarquia de preços e a fronteira entre as carteiras.",
+  "Risco de Mercado": "Quanto posso perder com preços, taxas e moedas? VaR, Expected Shortfall, backtesting, diversificação, stress e o capital por sensibilidades.",
+  "Capital": "Quanto capital próprio é preciso para absorver perdas inesperadas? RWA, Índice de Basileia, buffers e a fórmula IRB.",
+  "Liquidez": "O banco sobrevive a 30 dias de estresse? Sua estrutura de funding é estável em 1 ano? LCR, HQLA e NSFR.",
+  "IRRBB": "Como os juros afetam o valor (ΔEVE) e a margem (ΔNII) da carteira bancária, nos seis cenários de choque de Basileia.",
+  "Referência": "Os documentos regulatórios (CADOCs) em que cada métrica chega ao BCB e o glossário das siglas.",
+};
 
 export default function Home() {
   return (
     <>
-      <h1>Risk Hub</h1>
-      <p className="lead">
-        Um laboratório para entender — de verdade — os principais conceitos de gestão de riscos
-        de um banco. Cada página traz a intuição, a fórmula e um experimento interativo calculado
-        por uma API em Python.
-      </p>
+      <section className="hero">
+        <h1>Risk Hub</h1>
+        <p className="lead">
+          Um laboratório para entender — de verdade — os principais riscos de um banco. Cada página traz a
+          intuição, a fórmula com todos os termos definidos e um experimento interativo calculado por uma API em Python.
+        </p>
+        <div className="hero-actions">
+          <Link to="/fundamentos/curva-mtm" className="button-primary">Começar pelos fundamentos <Icon name="arrowRight" size={16} /></Link>
+          <Link to="/mercado/var" className="button-secondary">Ir direto ao VaR</Link>
+        </div>
+      </section>
 
-      <div className="grid-2">
-        {AREAS.map((a) => (
-          <Link key={a.to} to={a.to} style={{ textDecoration: "none", color: "inherit" }}>
-            <div className="card" style={{ height: "100%", margin: 0 }}>
-              <h3 style={{ marginTop: 0 }}>{a.title} →</h3>
-              <p style={{ margin: 0, color: "var(--text-2)" }}>{a.text}</p>
-            </div>
-          </Link>
+      <div className="area-grid">
+        {NAV.map((g) => (
+          <div key={g.group} className="area-card" style={{ ["--tone" as string]: g.tone }}>
+            <h3><Icon name={g.icon} />{g.group}</h3>
+            <p>{DESCRIPTIONS[g.group]}</p>
+            <ul>
+              {g.items.map((i) => <li key={i.to}><Link to={i.to}>{i.label}</Link></li>)}
+            </ul>
+          </div>
         ))}
       </div>
 
       <h2>Como usar</h2>
-      <ol>
-        <li><strong>Leia a intuição</strong> antes da fórmula: toda métrica responde a uma pergunta simples.</li>
-        <li><strong>Mexa nos parâmetros</strong> do laboratório e tente prever o resultado antes de ver.</li>
-        <li><strong>Leia os “O que observar”</strong>: são os experimentos que revelam as limitações de cada métrica.</li>
-      </ol>
+      <div className="steps">
+        <div className="step"><div className="step-number">1</div><p><strong>Leia a intuição</strong> antes da fórmula: toda métrica responde a uma pergunta simples.</p></div>
+        <div className="step"><div className="step-number">2</div><p><strong>Mexa nos parâmetros</strong> do laboratório e tente prever o resultado antes de ver.</p></div>
+        <div className="step"><div className="step-number">3</div><p><strong>Siga o “O que observar”</strong>: são os experimentos que revelam as limitações de cada métrica.</p></div>
+      </div>
 
       <h2>O mapa dos riscos</h2>
       <p>
@@ -65,17 +54,13 @@ export default function Home() {
         <table className="data">
           <thead><tr><th>Pergunta</th><th>Risco</th><th>Métricas</th><th>Horizonte típico</th></tr></thead>
           <tbody>
-            <tr><td>Quanto posso perder se os preços se moverem?</td><td>Mercado</td><td>VaR, ES, stress</td><td>1–10 dias</td></tr>
+            <tr><td>Quanto posso perder se os preços se moverem?</td><td>Mercado</td><td>VaR, ES, stress, RWA SENS</td><td>1–10 dias</td></tr>
             <tr><td>Tenho colchão suficiente para perdas inesperadas?</td><td>Capital (solvência)</td><td>RWA, Índice de Basileia</td><td>1 ano</td></tr>
             <tr><td>Tenho caixa se todos quiserem sacar?</td><td>Liquidez</td><td>LCR, NSFR</td><td>30 dias / 1 ano</td></tr>
             <tr><td>Juros sobem: perco valor ou margem?</td><td>IRRBB</td><td>ΔEVE, ΔNII</td><td>Vida do balanço / 12 meses</td></tr>
           </tbody>
         </table>
       </div>
-      <p className="muted" style={{ marginTop: 24, fontSize: 13 }}>
-        Os cálculos são simplificações didáticas dos padrões de Basileia (e de sua implementação no
-        Brasil pelo Banco Central). Não use para fins regulatórios.
-      </p>
     </>
   );
 }

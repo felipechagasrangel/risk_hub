@@ -1,6 +1,7 @@
 import katex from "katex";
 import "katex/dist/katex.min.css";
 import type { ReactNode } from "react";
+import { Icon } from "./icons";
 
 /** Símbolo em LaTeX e o que ele significa, para a legenda abaixo de uma fórmula. */
 export type FormulaTerm = [symbol: string, meaning: string];
@@ -85,17 +86,34 @@ export function Stat({ label, value, sub }: { label: string; value: ReactNode; s
   );
 }
 
+/** Quadro de destaque. Os de "O que observar" (experimentos do laboratório) ganham o tom de dica. */
 export function Callout({ title, children }: { title: string; children: ReactNode }) {
-  return <div className="callout"><strong>{title}</strong>{children}</div>;
+  const tip = title.startsWith("O que observar");
+  return (
+    <div className={`callout${tip ? " tip" : ""}`}>
+      <span className="callout-icon"><Icon name={tip ? "bulb" : "info"} /></span>
+      <div className="callout-body"><strong className="callout-title">{title}</strong>{children}</div>
+    </div>
+  );
 }
 
 /** Liga o conceito da página ao documento regulatório (CADOC) em que ele é reportado. */
 export function RegNote({ children }: { children: ReactNode }) {
-  return <div className="callout reg"><strong>📄 No reporte ao BCB</strong>{children}</div>;
+  return (
+    <div className="callout reg">
+      <span className="callout-icon"><Icon name="doc" /></span>
+      <div className="callout-body"><strong className="callout-title">No reporte ao BCB</strong>{children}</div>
+    </div>
+  );
 }
 
 export function Lab({ title, children }: { title: string; children: ReactNode }) {
-  return <div className="card lab"><div className="lab-title">🧪 {title}</div>{children}</div>;
+  return (
+    <div className="card lab">
+      <div className="lab-title"><Icon name="flask" size={17} />{title}</div>
+      <div className="lab-body">{children}</div>
+    </div>
+  );
 }
 
 export type LegendItem = { label: string; color: string; box?: boolean };

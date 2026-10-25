@@ -1,82 +1,95 @@
-import { useEffect } from "react";
-import { Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { Icon } from "./components/icons";
+import { ThemeToggle } from "./components/ThemeToggle";
 import Home from "./pages/Home";
-import VaRPage from "./pages/market/VaRPage";
-import PortfolioPage from "./pages/market/PortfolioPage";
-import StressPage from "./pages/market/StressPage";
-import RWAPage from "./pages/capital/RWAPage";
-import IRBPage from "./pages/capital/IRBPage";
-import RWASensPage from "./pages/market/RWASensPage";
-import LCRPage from "./pages/liquidity/LCRPage";
-import NSFRPage from "./pages/liquidity/NSFRPage";
-import IRRBBPage from "./pages/irrbb/IRRBBPage";
-import Glossary from "./pages/Glossary";
-import Cadocs from "./pages/Cadocs";
-import CurveMtmPage from "./pages/fundamentals/CurveMtmPage";
-import DerivativesPage from "./pages/fundamentals/DerivativesPage";
-import AccountingPage from "./pages/fundamentals/AccountingPage";
-import BooksPage from "./pages/fundamentals/BooksPage";
-import InstrumentsPage from "./pages/fundamentals/InstrumentsPage";
+import { NAV } from "./nav";
 
-export const NAV = [
-  { group: "Fundamentos", items: [
-    { to: "/fundamentos/curva-mtm", label: "Na curva × a mercado", el: <CurveMtmPage /> },
-    { to: "/fundamentos/derivativos", label: "Derivativos", el: <DerivativesPage /> },
-    { to: "/fundamentos/contabil", label: "Contabilidade e preços", el: <AccountingPage /> },
-    { to: "/fundamentos/carteiras", label: "Negociação × bancária", el: <BooksPage /> },
-    { to: "/fundamentos/instrumentos", label: "Catálogo de instrumentos", el: <InstrumentsPage /> },
-  ] },
-  { group: "Risco de Mercado", items: [
-    { to: "/mercado/var", label: "VaR e Expected Shortfall", el: <VaRPage /> },
-    { to: "/mercado/carteira", label: "Diversificação", el: <PortfolioPage /> },
-    { to: "/mercado/stress", label: "Stress testing", el: <StressPage /> },
-    { to: "/mercado/rwa-sens", label: "RWA SENS: GIRR e FX", el: <RWASensPage /> },
-  ] },
-  { group: "Capital", items: [
-    { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },
-    { to: "/capital/irb", label: "Modelo IRB", el: <IRBPage /> },
-  ] },
-  { group: "Liquidez", items: [
-    { to: "/liquidez/lcr", label: "LCR", el: <LCRPage /> },
-    { to: "/liquidez/nsfr", label: "NSFR", el: <NSFRPage /> },
-  ] },
-  { group: "IRRBB", items: [
-    { to: "/irrbb", label: "ΔEVE e ΔNII", el: <IRRBBPage /> },
-  ] },
-];
+const PAGES = NAV.flatMap((g) => g.items.map((i) => ({ ...i, group: g })));
 
 export default function App() {
   const { pathname, hash } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
   useEffect(() => {
+    setMenuOpen(false);
     const target = hash && document.getElementById(hash.slice(1));
     if (target) target.scrollIntoView();
     else window.scrollTo(0, 0);
   }, [pathname, hash]);
 
+  const index = PAGES.findIndex((p) => p.to === pathname);
+  const page = index >= 0 ? PAGES[index] : null;
+
   return (
-    <div className="layout">
+    <div className={`layout${menuOpen ? " menu-open" : ""}`}>
+      <header className="topbar">
+        <Brand />
+        <button className="icon-button" aria-label={menuOpen ? "Fechar menu" : "Abrir menu"} onClick={() => setMenuOpen(!menuOpen)}>
+          <Icon name={menuOpen ? "close" : "menu"} />
+        </button>
+      </header>
+
       <nav className="sidebar">
-        <div className="brand">Risk Hub<span>aprendendo riscos financeiros</span></div>
-        <NavLink to="/" end>Início</NavLink>
-        {NAV.map((g) => (
-          <div key={g.group}>
-            <div className="group">{g.group}</div>
-            {g.items.map((i) => <NavLink key={i.to} to={i.to}>{i.label}</NavLink>)}
-          </div>
-        ))}
-        <div className="group">Referência</div>
-        <NavLink to="/cadocs">CADOCs</NavLink>
-        <NavLink to="/glossario">Glossário</NavLink>
+        <div className="sidebar-brand"><Brand /></div>
+        <div className="nav-scroll">
+          <NavLink to="/" end className="nav-link">Início</NavLink>
+          {NAV.map((g) => (
+            <div key={g.group} className="nav-group" style={{ ["--tone" as string]: g.tone }}>
+              <div className="group"><Icon name={g.icon} size={14} />{g.group}</div>
+              {g.items.map((i) => <NavLink key={i.to} to={i.to} className="nav-link">{i.label}</NavLink>)}
+            </div>
+          ))}
+        </div>
+        <div className="sidebar-footer"><ThemeToggle /></div>
       </nav>
+
       <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          {NAV.flatMap((g) => g.items).map((i) => <Route key={i.to} path={i.to} element={i.el} />)}
-          <Route path="/fundamentos/aprecamento" element={<Navigate to="/fundamentos/curva-mtm" replace />} />
-          <Route path="/cadocs" element={<Cadocs />} />
-          <Route path="/glossario" element={<Glossary />} />
-        </Routes>
+        <div className="content">
+          {page && (
+            <div className="eyebrow" style={{ ["--tone" as string]: page.group.tone }}>
+              <Icon name={page.group.icon} size={14} />{page.group.group}
+            </div>
+          )}
+          <Routes>
+            <Route path="/" element={<Home />} />
+            {PAGES.map((i) => <Route key={i.to} path={i.to} element={i.el} />)}
+            <Route path="/fundamentos/aprecamento" element={<Navigate to="/fundamentos/curva-mtm" replace />} />
+          </Routes>
+          {page && <Pager prev={PAGES[index - 1]} next={PAGES[index + 1]} />}
+          <footer className="site-footer">
+            Risk Hub — material didático. Simplificações dos padrões de Basileia e da regulação do BCB; não use para fins regulatórios.
+          </footer>
+        </div>
       </main>
     </div>
+  );
+}
+
+function Brand() {
+  return (
+    <Link to="/" className="brand">
+      <span className="brand-mark"><Icon name="chart" size={16} /></span>
+      <span>Risk Hub<small>aprendendo riscos financeiros</small></span>
+    </Link>
+  );
+}
+
+function Pager({ prev, next }: { prev?: (typeof PAGES)[number]; next?: (typeof PAGES)[number] }) {
+  return (
+    <nav className="pager" aria-label="Navegação entre páginas">
+      {prev ? (
+        <Link to={prev.to} className="pager-link">
+          <span className="pager-dir"><Icon name="arrowLeft" size={14} /> Anterior</span>
+          <span className="pager-title">{prev.label}</span>
+        </Link>
+      ) : <span />}
+      {next && (
+        <Link to={next.to} className="pager-link next">
+          <span className="pager-dir">Próxima <Icon name="arrowRight" size={14} /></span>
+          <span className="pager-title">{next.label}</span>
+        </Link>
+      )}
+    </nav>
   );
 }
