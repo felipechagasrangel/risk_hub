@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import capital, irrbb, liquidity, market, rwa_sens, stress
+from backend.api import capital, irrbb, liquidity, market, rwa_sens, stress
 
 app = FastAPI(
     title="Risk Hub",

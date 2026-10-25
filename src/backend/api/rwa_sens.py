@@ -3,9 +3,9 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.core import rwa_sens
+from backend.core import rwa_sens
 
-router = APIRouter(prefix="/capital", tags=["Capital"])
+router = APIRouter(prefix="/market", tags=["Risco de Mercado"])
 
 
 class Curve(BaseModel):

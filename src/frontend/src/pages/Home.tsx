@@ -4,7 +4,7 @@ const AREAS = [
   {
     title: "Risco de Mercado",
     to: "/mercado/var",
-    text: "Quanto posso perder com movimentos de preços, taxas e moedas? VaR paramétrico, histórico e Monte Carlo, Expected Shortfall, backtesting, diversificação e stress testing.",
+    text: "Quanto posso perder com movimentos de preços, taxas e moedas? VaR paramétrico, histórico e Monte Carlo, Expected Shortfall, backtesting, diversificação, stress testing e o capital de mercado por sensibilidades (RWA SENS).",
   },
   {
     title: "Capital",

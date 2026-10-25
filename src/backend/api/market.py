@@ -4,7 +4,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.core import market
+from backend.core import market
 
 router = APIRouter(prefix="/market", tags=["Risco de Mercado"])
 

@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.core import capital
+from backend.core import capital
 
 router = APIRouter(prefix="/capital", tags=["Capital"])
 

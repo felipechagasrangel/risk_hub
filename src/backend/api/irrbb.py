@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.core import irrbb
+from backend.core import irrbb
 
 router = APIRouter(prefix="/irrbb", tags=["IRRBB"])
 

@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.core import liquidity
+from backend.core import liquidity
 
 router = APIRouter(prefix="/liquidity", tags=["Liquidez"])
 

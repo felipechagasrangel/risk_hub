@@ -88,7 +88,7 @@ export default function Cadocs() {
               <td><a href="#rwasens"><strong>RWA SENS</strong></a></td>
               <td>Novo componente do RWA de risco de mercado (abordagem padronizada por sensibilidades)</td>
               <td>A partir de jan/2027</td>
-              <td><Link to="/mercado/var">Risco de mercado</Link></td>
+              <td><Link to="/mercado/rwa-sens">Calculadora RWA SENS</Link></td>
             </tr>
           </tbody>
         </table>
@@ -166,7 +166,7 @@ export default function Cadocs() {
         <li><strong>RRAO</strong>: adicional para riscos residuais (por exemplo, subjacentes exóticos) não captados pelas sensibilidades.</li>
       </ul>
       <p>
-        👉 Experimente na <Link to="/capital/rwa-sens">calculadora do RWA SENS</Link> (Delta e Curvatura GIRR, Delta FX), que reproduz os vértices,
+        👉 Experimente na <Link to="/mercado/rwa-sens">calculadora do RWA SENS</Link> (Delta e Curvatura GIRR, Delta FX), que reproduz os vértices,
         ponderadores e correlações da norma.
       </p>
       <Callout title="Conexões com o que você já viu aqui">

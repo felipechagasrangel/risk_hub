@@ -8,7 +8,7 @@ Cada posição é exposta a um fator de risco:
 As magnitudes dos cenários históricos são aproximadas e servem para ilustrar ordens de grandeza.
 """
 
-from app.core import market
+from backend.core import market
 
 FACTORS = ("equity", "fx", "rates")
 

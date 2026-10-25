@@ -1,6 +1,6 @@
 from math import exp, isclose
 
-from app.core import capital, irrbb, liquidity, market, rwa_sens, stress
+from backend.core import capital, irrbb, liquidity, market, rwa_sens, stress
 
 
 def test_parametric_var_matches_textbook():

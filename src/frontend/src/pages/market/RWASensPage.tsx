@@ -73,7 +73,7 @@ export default function RWASensPage() {
     name: r.name, currency: r.currency, settlement: r.settlement,
     dv01: VERTICES.map((_, i) => r[`d${i}`]),
   }));
-  const { data, error } = useCompute<Resp>("/capital/rwa-sens", {
+  const { data, error } = useCompute<Resp>("/market/rwa-sens", {
     curves,
     fx,
     options: options.map((o) => ({ ...o, underlying_du: Number(o.underlying_du) })),
@@ -99,6 +99,12 @@ export default function RWASensPage() {
       <p className="muted" style={{ fontSize: 14 }}>
         Contexto regulatório e o que o RWA SENS substitui: veja a seção <Link to="/cadocs#rwasens">RWA SENS</Link> na página de CADOCs.
       </p>
+      <Callout title="De quem é o RWA SENS?">
+        É risco de mercado: nasce das sensibilidades da carteira de negociação, segue o FRTB e é calculado,
+        acompanhado e reportado pela área de mercado (junto com DDR e DRM). O resultado, porém, entra na parcela
+        RWA<sub>MPAD</sub> e, portanto, no denominador do <Link to="/capital/rwa">índice de Basileia</Link> — é aí que ele
+        encontra a visão de capital.
+      </Callout>
 
       <h2>1. Sensibilidades por vértice</h2>
       <p>

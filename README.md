@@ -1,8 +1,8 @@
 # Risk Hub
 
 Site didático para aprender conceitos de risco bancário: **mercado** (VaR, ES, backtesting, stress testing,
-diversificação), **capital** (RWA, Índice de Basileia, IRB), **liquidez** (LCR, NSFR) e
-**IRRBB** (ΔEVE, ΔNII, gap de repricing).
+diversificação, RWA SENS), **capital** (RWA, Índice de Basileia, IRB), **liquidez** (LCR, NSFR) e
+**IRRBB** (ΔEVE, ΔNII, gap de repricing), além dos CADOCs em que cada métrica é reportada ao BCB.
 
 Cada página tem a intuição, as fórmulas e um laboratório interativo; os cálculos ficam
 numa API FastAPI.
@@ -10,38 +10,43 @@ numa API FastAPI.
 ## Estrutura
 
 ```
-backend/
-  app/core/     cálculos puros (numpy) — leia aqui para entender as fórmulas
-  app/api/      rotas FastAPI e schemas Pydantic
-  tests/        pytest
-frontend/
-  src/pages/    uma página por conceito (React + Recharts + KaTeX)
-  src/components/
+src/
+  backend/core/     cálculos puros (numpy) — leia aqui para entender as fórmulas
+  backend/api/      rotas FastAPI e schemas Pydantic
+  backend/main.py   aplicação FastAPI
+  frontend/         React + Vite (src/pages: uma página por conceito)
+tests/              pytest do backend
+files/              arquivos do projeto
+docs/               documentação (fontes regulatórias usadas)
 ```
 
 ## Rodando
 
+Todos os comandos a partir da pasta raiz do projeto.
+
+Instalação (uma vez):
+
+```bash
+python -m venv .venv
+.venv/Scripts/python -m pip install -r requirements.txt
+npm --prefix src/frontend install
+```
+
 Backend (porta 8000, documentação interativa em http://localhost:8000/docs):
 
 ```bash
-cd backend
-python -m venv .venv
-.venv/Scripts/python -m pip install -r requirements.txt
-.venv/Scripts/python -m uvicorn app.main:app --reload
+.venv/Scripts/python -m uvicorn backend.main:app --reload --app-dir src
 ```
 
 Frontend (porta 5173, faz proxy de `/api` para o backend):
 
 ```bash
-cd frontend
-npm install
-npm run dev
+npm --prefix src/frontend run dev
 ```
 
 Testes:
 
 ```bash
-cd backend
 .venv/Scripts/python -m pytest
 ```
 
@@ -50,4 +55,5 @@ cd backend
 Os modelos são versões didáticas dos padrões de Basileia: retornos sintéticos, abordagem
 padronizada com FPRs informados manualmente, LCR sem unwind de compromissadas, IRRBB com
 bullets de cupom anual e curva em taxas contínuas, sem floors pós-choque nem modelagem
-comportamental de depósitos. Não use para fins regulatórios.
+comportamental de depósitos. O RWA SENS cobre Delta e Curvatura GIRR e Delta FX. Veja as
+fontes em [docs/fontes-regulatorias.md](docs/fontes-regulatorias.md). Não use para fins regulatórios.
