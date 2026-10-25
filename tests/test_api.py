@@ -58,3 +58,9 @@ def test_girr_delta_endpoint():
 def test_rwa_sens_rejects_brl_fx_pair():
     r = client.post("/api/market/rwa-sens", json={"fx": [{"name": "x", "currency": "BRL", "exposure": 1}]})
     assert r.status_code == 422
+
+
+def test_bond_valuation_endpoint():
+    r = client.post("/api/valuation/bond", json={})
+    assert r.status_code == 200
+    assert r.json()["today"]["unrealized"] < 0

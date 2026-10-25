@@ -12,8 +12,12 @@ import NSFRPage from "./pages/liquidity/NSFRPage";
 import IRRBBPage from "./pages/irrbb/IRRBBPage";
 import Glossary from "./pages/Glossary";
 import Cadocs from "./pages/Cadocs";
+import ValuationPage from "./pages/fundamentals/ValuationPage";
 
 export const NAV = [
+  { group: "Fundamentos", items: [
+    { to: "/fundamentos/aprecamento", label: "Curva, MTM e carteiras", el: <ValuationPage /> },
+  ] },
   { group: "Risco de Mercado", items: [
     { to: "/mercado/var", label: "VaR e Expected Shortfall", el: <VaRPage /> },
     { to: "/mercado/carteira", label: "Diversificação", el: <PortfolioPage /> },

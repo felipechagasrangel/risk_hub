@@ -2,6 +2,11 @@ import { Link } from "react-router-dom";
 
 const AREAS = [
   {
+    title: "Fundamentos",
+    to: "/fundamentos/aprecamento",
+    text: "Quanto vale cada posição? Apreçamento na curva e a mercado, categorias contábeis, hierarquia de preços e a fronteira entre carteira de negociação e carteira bancária.",
+  },
+  {
     title: "Risco de Mercado",
     to: "/mercado/var",
     text: "Quanto posso perder com movimentos de preços, taxas e moedas? VaR paramétrico, histórico e Monte Carlo, Expected Shortfall, backtesting, diversificação, stress testing e o capital de mercado por sensibilidades (RWA SENS).",

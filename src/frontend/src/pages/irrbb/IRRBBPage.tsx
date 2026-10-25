@@ -89,7 +89,7 @@ export default function IRRBBPage() {
           <h3 style={{ marginTop: 0 }}>ΔEVE — valor econômico</h3>
           <p>
             O EVE (<em>Economic Value of Equity</em>) é o valor presente de todos os fluxos dos ativos
-            menos o dos passivos. ΔEVE é sua variação quando a curva é choqueada. É uma visão de
+            menos o dos passivos. ΔEVE é sua variação quando a curva é chocada. É uma visão de
             <strong> longo prazo</strong>: captura todo o descasamento até o último fluxo.
           </p>
           <Formula tex={String.raw`\text{EVE} = \sum_{t} \frac{CF^{A}_t - CF^{L}_t}{e^{\,r(t)\,t}}, \quad \Delta\text{EVE} = \text{EVE}_{\text{choque}} - \text{EVE}_{\text{base}}`} />
@@ -221,7 +221,7 @@ function Results({ data }: { data: Resp }) {
           </>} />
       </div>
 
-      <div className="chart-title">Curva base e curvas choqueadas</div>
+      <div className="chart-title">Curva base e curvas chocadas</div>
       <Legend items={[{ label: "Base", color: "var(--text)" }, ...SCENARIOS]} />
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data.curves} margin={{ top: 10, right: 16, bottom: 4, left: 0 }}>

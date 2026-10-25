@@ -1,10 +1,14 @@
 const TERMS: [string, string][] = [
+  ["Accrual (curva)", "Apreçamento pela taxa efetiva da operação: o valor cresce com o tempo e não reage ao mercado."],
   ["ASF / RSF", "Available / Required Stable Funding: numerador e denominador do NSFR."],
   ["Backtesting", "Comparação entre perdas realizadas e o VaR previsto para validar o modelo."],
   ["Buffer de conservação", "Colchão de 2,5% do RWA em CET1 acima do mínimo; descumpri-lo restringe dividendos."],
   ["CADOC", "Catálogo de Documentos do BCB: identifica cada documento enviado pelo STA (ex.: 2060 = DRM)."],
+  ["Carteira bancária", "Banking book: tudo o que não está na carteira de negociação (crédito, captação, ALM, hedges)."],
+  ["Carteira de negociação", "Trading book: instrumentos com finalidade de negociação, sem impedimento de venda e marcados a mercado no resultado."],
   ["CCF", "Fator de conversão de crédito: transforma exposições fora do balanço em exposição equivalente."],
   ["CET1", "Capital Principal: ações ordinárias e lucros retidos, a camada de maior qualidade."],
+  ["Custo amortizado (CA)", "Categoria da Res. CMN 4.966 para ativos mantidos para receber fluxos e que passam no SPPJ; valor na curva."],
   ["DDR (2011)", "Demonstrativo Diário de Acompanhamento das Parcelas de Requerimento de Capital e dos Limites Operacionais."],
   ["DLI (2062)", "Demonstrativo de Limites Operacionais Individuais: limites de cada instituição individual."],
   ["DLO (2061)", "Demonstrativo de Limites Operacionais: PR, RWA e índices de capital do conglomerado prudencial."],
@@ -23,6 +27,7 @@ const TERMS: [string, string][] = [
   ["IRRBB", "Interest Rate Risk in the Banking Book: risco de juros da carteira bancária."],
   ["LCR", "Liquidity Coverage Ratio: HQLA ÷ saídas líquidas em 30 dias de estresse ≥ 100%."],
   ["LGD", "Loss Given Default: percentual da exposição perdido em caso de default."],
+  ["MTM", "Mark-to-market: reavaliação pelo preço de mercado do dia (valor justo)."],
   ["NII", "Net Interest Income: margem financeira (receitas menos despesas de juros)."],
   ["NMD", "Non-Maturity Deposits: depósitos sem vencimento, cuja duração é modelada comportamentalmente."],
   ["NSFR", "Net Stable Funding Ratio: ASF ÷ RSF ≥ 100%, horizonte de 1 ano."],
@@ -32,8 +37,11 @@ const TERMS: [string, string][] = [
   ["Run-off", "Taxa de saída de um passivo no cenário de estresse do LCR."],
   ["RWA", "Risk-Weighted Assets: ativos ponderados pelo risco; denominador dos índices de capital."],
   ["RWA SENS", "Componente do RWA de mercado por sensibilidades (Delta, Vega, Curvatura), vigente para S1–S3 a partir de 2027."],
+  ["SPPJ", "Teste de Somente Pagamento de Principal e Juros (SPPI no IFRS 9), usado na classificação contábil."],
   ["STA", "Sistema de Transferência de Arquivos do BCB, pelo qual os documentos são enviados."],
   ["VaR", "Value at Risk: quantil da distribuição de perdas para um nível de confiança e horizonte."],
+  ["VJORA", "Valor justo em outros resultados abrangentes: MTM no balanço, juros no resultado e marcação no PL."],
+  ["VJR", "Valor justo no resultado: MTM com toda a variação de valor no resultado."],
 ];
 
 export default function Glossary() {

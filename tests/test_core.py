@@ -1,6 +1,6 @@
 from math import exp, isclose
 
-from backend.core import capital, irrbb, liquidity, market, rwa_sens, stress
+from backend.core import capital, irrbb, liquidity, market, rwa_sens, stress, valuation
 
 
 def test_parametric_var_matches_textbook():
@@ -154,3 +154,19 @@ def test_compute_sums_fx_delta_into_totals():
     fx = [{"currency": "USD", "exposure": 1_000_000}]
     res = rwa_sens.compute([], [], fx, False)
     assert isclose(res["totals"]["medium"], 150_000)
+
+
+def test_accrual_and_mtm_converge_at_maturity():
+    r = valuation.bond_paths(1000, 2, 0.12, 0.15, 0.5, 1)
+    last = r["path"][-1]
+    assert isclose(last["accrual"], 1000) and isclose(last["mtm"], 1000)
+
+
+def test_rate_rise_creates_unrealized_loss_split_by_category():
+    r = valuation.bond_paths(1000, 2, 0.12, 0.15, 0.5, 1)
+    today, cats = r["today"], r["today"]["categories"]
+    assert today["unrealized"] < 0
+    # VJORA: juros no resultado, marcação no PL; VJR: tudo no resultado
+    assert isclose(cats["fvoci"]["income"], cats["amortized_cost"]["income"])
+    assert isclose(cats["fvoci"]["oci"], today["unrealized"])
+    assert isclose(cats["fvtpl"]["income"], cats["fvoci"]["income"] + cats["fvoci"]["oci"])
