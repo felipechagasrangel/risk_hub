@@ -165,6 +165,10 @@ export default function Cadocs() {
         <li><strong>Três cenários de correlação</strong> (alta, média e baixa): vale o mais conservador, porque as correlações mudam no estresse;</li>
         <li><strong>RRAO</strong>: adicional para riscos residuais (por exemplo, subjacentes exóticos) não captados pelas sensibilidades.</li>
       </ul>
+      <p>
+        👉 Experimente na <Link to="/capital/rwa-sens">calculadora do Delta GIRR</Link>, que reproduz os vértices,
+        ponderadores e correlações da norma.
+      </p>
       <Callout title="Conexões com o que você já viu aqui">
         A ideia do Delta é a mesma do VaR paramétrico de carteira: sensibilidade × choque, agregada com
         correlações (<Link to="/mercado/carteira">Diversificação</Link>). Pegar o pior de três cenários de

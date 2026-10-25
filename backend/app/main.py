@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import capital, irrbb, liquidity, market, stress
+from app.api import capital, irrbb, liquidity, market, rwa_sens, stress
 
 app = FastAPI(
     title="Risk Hub",
@@ -15,7 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for module in (market, stress, capital, liquidity, irrbb):
+for module in (market, stress, capital, rwa_sens, liquidity, irrbb):
     app.include_router(module.router, prefix="/api")
 
 

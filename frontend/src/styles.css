@@ -152,6 +152,8 @@ table.data th { text-align: left; font-weight: 600; color: var(--text-2); font-s
 table.data td { padding: 4px 6px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
 table.data td.num, table.data th.num { text-align: right; }
 .table-wrap { overflow-x: auto; }
+table.data.heat td { border: 2px solid var(--surface); text-align: center; font-size: 12px; padding: 6px 4px; }
+table.data.heat th { font-size: 12px; }
 
 button {
   font: inherit;

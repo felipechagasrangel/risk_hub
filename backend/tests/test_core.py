@@ -1,6 +1,6 @@
-from math import isclose
+from math import exp, isclose
 
-from app.core import capital, irrbb, liquidity, market, stress
+from app.core import capital, irrbb, liquidity, market, rwa_sens, stress
 
 
 def test_parametric_var_matches_textbook():
@@ -69,3 +69,36 @@ def test_stress_reverse_multiplier_reaches_loss_limit():
     custom = next(s for s in res["scenarios"] if s["key"] == "custom")
     assert isclose(custom["total_pnl"], -100)
     assert isclose(custom["reverse_multiplier"], 2)
+
+
+def test_girr_annex_vii_matches_basel_formula():
+    # Anexo VII = max(exp(−3% × |Tk − Tl| / min(Tk, Tl)), 40%), com vértices em anos
+    years = [du / 252 for du in rwa_sens.VERTICES_DU]
+    for i in range(1, len(years)):
+        for j in range(1, len(years)):
+            tk, tl = years[i], years[j]
+            expected = max(exp(-0.03 * abs(tk - tl) / min(tk, tl)), 0.4)
+            assert abs(rwa_sens.vertex_correlation(i, j) - expected) < 6e-4
+
+
+def test_girr_single_sensitivity_is_dv01_times_shock():
+    # DV01 de −1.000 no vértice de 5 anos (1.260 DU), BRL sem grau de investimento: RW = 2,6%
+    dv01 = [0.0] * 11
+    dv01[6] = -1000
+    res = rwa_sens.girr_delta([{"name": "Pré", "currency": "BRL", "settlement": "BRL", "dv01": dv01}],
+                              brazil_investment_grade=False)
+    assert isclose(res["requirement"], 1000 * 260)  # perda de um choque de 260 bps
+    assert isclose(res["rwa"], 1000 * 260 / 0.08)
+
+
+def test_girr_hedge_between_vertices_is_binding_in_low_correlation():
+    dv01 = [0.0] * 11
+    dv01[4], dv01[6] = -1000, 1000  # comprado em 2 anos, vendido em 5 anos
+    res = rwa_sens.girr_delta([{"name": "Pré", "currency": "BRL", "settlement": "BRL", "dv01": dv01}], False)
+    assert res["binding_scenario"] == "low"
+
+
+def test_girr_category_factor_depends_on_settlement_currency():
+    assert rwa_sens.category_factor("USD", "USD", False) == 0.7071
+    assert rwa_sens.category_factor("USD", "BRL", False) == 1.0  # cupom cambial
+    assert rwa_sens.category_factor("BRL", "BRL", True) == 0.7071

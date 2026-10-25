@@ -42,3 +42,14 @@ def test_stress_endpoint():
     body = r.json()
     assert body["var_10d"] > body["var_1d"] > 0
     assert len(body["scenarios"]) == 6
+
+
+def test_girr_delta_endpoint():
+    r = client.post("/api/capital/rwa-sens/girr-delta", json={"curves": [
+        {"name": "Pré", "currency": "brl", "settlement": "brl", "dv01": [0, 0, 0, -100, 0, 0, 0, 0, 0, 0, 0]},
+        {"name": "Treasury", "currency": "USD", "settlement": "USD", "dv01": [0] * 10 + [-50]},
+    ]})
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body["scenarios"]) == {"medium", "high", "low"}
+    assert body["rwa"] > 0

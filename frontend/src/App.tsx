@@ -6,6 +6,7 @@ import PortfolioPage from "./pages/market/PortfolioPage";
 import StressPage from "./pages/market/StressPage";
 import RWAPage from "./pages/capital/RWAPage";
 import IRBPage from "./pages/capital/IRBPage";
+import RWASensPage from "./pages/capital/RWASensPage";
 import LCRPage from "./pages/liquidity/LCRPage";
 import NSFRPage from "./pages/liquidity/NSFRPage";
 import IRRBBPage from "./pages/irrbb/IRRBBPage";
@@ -21,6 +22,7 @@ export const NAV = [
   { group: "Capital", items: [
     { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },
     { to: "/capital/irb", label: "Modelo IRB", el: <IRBPage /> },
+    { to: "/capital/rwa-sens", label: "RWA SENS: Delta GIRR", el: <RWASensPage /> },
   ] },
   { group: "Liquidez", items: [
     { to: "/liquidez/lcr", label: "LCR", el: <LCRPage /> },
