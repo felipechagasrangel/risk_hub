@@ -31,9 +31,10 @@ O sinal do termo linear do CVR⁻ segue Basileia (MAR21.5); a Resolução BCB n�
 esse sinal e também ajustou ponderadores de spread de crédito e os choques de IRRBB de moedas
 estrangeiras.
 
-## Apreçamento e carteiras — `src/backend/core/valuation.py` e `pages/fundamentals/ValuationPage.tsx`
+## Fundamentos — `src/backend/core/valuation.py` e `src/frontend/src/pages/fundamentals/`
 
 - Resolução CMN nº 4.966/2021 (IFRS 9): custo amortizado, VJORA e VJR por modelo de negócio e teste de SPPJ;
+  derivativos a valor justo e contabilidade de hedge (antes, Circular nº 3.082/2002);
   substitui as categorias da Circular nº 3.068/2001.
 - CPC 46 (IFRS 13): níveis 1, 2 e 3 de valor justo.
 - Resolução CMN nº 4.277/2013 (alterada pela nº 4.389/2014): apreçamento prudente e ajustes prudenciais;

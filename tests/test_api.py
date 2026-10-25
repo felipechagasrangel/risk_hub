@@ -64,3 +64,9 @@ def test_bond_valuation_endpoint():
     r = client.post("/api/valuation/bond", json={})
     assert r.status_code == 200
     assert r.json()["today"]["unrealized"] < 0
+
+
+def test_swap_and_floating_endpoints():
+    assert client.post("/api/valuation/swap", json={}).status_code == 200
+    assert client.post("/api/valuation/floating", json={}).status_code == 200
+    assert client.post("/api/valuation/swap", json={"elapsed_du": 600}).status_code == 422

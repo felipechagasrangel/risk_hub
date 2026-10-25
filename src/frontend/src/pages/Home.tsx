@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 const AREAS = [
   {
     title: "Fundamentos",
-    to: "/fundamentos/aprecamento",
-    text: "Quanto vale cada posição? Apreçamento na curva e a mercado, categorias contábeis, hierarquia de preços e a fronteira entre carteira de negociação e carteira bancária.",
+    to: "/fundamentos/curva-mtm",
+    text: "Quanto vale cada posição? Na curva e a mercado, derivativos, categorias contábeis, hierarquia de preços, carteira de negociação × bancária e um catálogo de instrumentos.",
   },
   {
     title: "Risco de Mercado",

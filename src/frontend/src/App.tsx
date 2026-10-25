@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import VaRPage from "./pages/market/VaRPage";
 import PortfolioPage from "./pages/market/PortfolioPage";
@@ -12,11 +12,19 @@ import NSFRPage from "./pages/liquidity/NSFRPage";
 import IRRBBPage from "./pages/irrbb/IRRBBPage";
 import Glossary from "./pages/Glossary";
 import Cadocs from "./pages/Cadocs";
-import ValuationPage from "./pages/fundamentals/ValuationPage";
+import CurveMtmPage from "./pages/fundamentals/CurveMtmPage";
+import DerivativesPage from "./pages/fundamentals/DerivativesPage";
+import AccountingPage from "./pages/fundamentals/AccountingPage";
+import BooksPage from "./pages/fundamentals/BooksPage";
+import InstrumentsPage from "./pages/fundamentals/InstrumentsPage";
 
 export const NAV = [
   { group: "Fundamentos", items: [
-    { to: "/fundamentos/aprecamento", label: "Curva, MTM e carteiras", el: <ValuationPage /> },
+    { to: "/fundamentos/curva-mtm", label: "Na curva × a mercado", el: <CurveMtmPage /> },
+    { to: "/fundamentos/derivativos", label: "Derivativos", el: <DerivativesPage /> },
+    { to: "/fundamentos/contabil", label: "Contabilidade e preços", el: <AccountingPage /> },
+    { to: "/fundamentos/carteiras", label: "Negociação × bancária", el: <BooksPage /> },
+    { to: "/fundamentos/instrumentos", label: "Catálogo de instrumentos", el: <InstrumentsPage /> },
   ] },
   { group: "Risco de Mercado", items: [
     { to: "/mercado/var", label: "VaR e Expected Shortfall", el: <VaRPage /> },
@@ -64,6 +72,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           {NAV.flatMap((g) => g.items).map((i) => <Route key={i.to} path={i.to} element={i.el} />)}
+          <Route path="/fundamentos/aprecamento" element={<Navigate to="/fundamentos/curva-mtm" replace />} />
           <Route path="/cadocs" element={<Cadocs />} />
           <Route path="/glossario" element={<Glossary />} />
         </Routes>

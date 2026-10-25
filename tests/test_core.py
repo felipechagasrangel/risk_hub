@@ -170,3 +170,20 @@ def test_rate_rise_creates_unrealized_loss_split_by_category():
     assert isclose(cats["fvoci"]["income"], cats["amortized_cost"]["income"])
     assert isclose(cats["fvoci"]["oci"], today["unrealized"])
     assert isclose(cats["fvtpl"]["income"], cats["fvoci"]["income"] + cats["fvoci"]["oci"])
+
+
+def test_floating_note_only_marks_spread_changes():
+    same = valuation.floating_note(1000, 756, 252, 0.14, 0.01, 0.01)
+    assert isclose(same["mtm"], same["curve"])
+    wider = valuation.floating_note(1000, 756, 252, 0.14, 0.01, 0.015)
+    assert wider["unrealized"] < 0  # spread de mercado maior: o papel vale menos
+
+
+def test_swap_cdi_leg_has_no_marking_and_fixed_leg_carries_it():
+    s = valuation.swap_di_pre(1000, 504, 126, 0.13, 0.14, 0.13, receive_fixed=True)
+    assert isclose(s["legs"]["cdi"]["curve"], s["legs"]["cdi"]["mtm"])
+    assert isclose(s["value_mtm"], s["value_curve"])  # taxa de mercado = contratada
+    up = valuation.swap_di_pre(1000, 504, 126, 0.13, 0.14, 0.15, receive_fixed=True)
+    assert up["unrealized"] < 0 and up["dv01"] < 0  # recebe pré: perde com alta de juros
+    payer = valuation.swap_di_pre(1000, 504, 126, 0.13, 0.14, 0.15, receive_fixed=False)
+    assert isclose(payer["value_mtm"], -up["value_mtm"])
