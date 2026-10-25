@@ -1,6 +1,6 @@
 # Risk Hub
 
-Site didático para aprender conceitos de risco bancário: **mercado** (VaR, ES, backtesting,
+Site didático para aprender conceitos de risco bancário: **mercado** (VaR, ES, backtesting, stress testing,
 diversificação), **capital** (RWA, Índice de Basileia, IRB), **liquidez** (LCR, NSFR) e
 **IRRBB** (ΔEVE, ΔNII, gap de repricing).
 

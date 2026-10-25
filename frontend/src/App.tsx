@@ -3,6 +3,7 @@ import { NavLink, Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import VaRPage from "./pages/market/VaRPage";
 import PortfolioPage from "./pages/market/PortfolioPage";
+import StressPage from "./pages/market/StressPage";
 import RWAPage from "./pages/capital/RWAPage";
 import IRBPage from "./pages/capital/IRBPage";
 import LCRPage from "./pages/liquidity/LCRPage";
@@ -14,6 +15,7 @@ export const NAV = [
   { group: "Risco de Mercado", items: [
     { to: "/mercado/var", label: "VaR e Expected Shortfall", el: <VaRPage /> },
     { to: "/mercado/carteira", label: "Diversificação", el: <PortfolioPage /> },
+    { to: "/mercado/stress", label: "Stress testing", el: <StressPage /> },
   ] },
   { group: "Capital", items: [
     { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },

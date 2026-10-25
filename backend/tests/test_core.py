@@ -1,6 +1,6 @@
 from math import isclose
 
-from app.core import capital, irrbb, liquidity, market
+from app.core import capital, irrbb, liquidity, market, stress
 
 
 def test_parametric_var_matches_textbook():
@@ -52,3 +52,20 @@ def test_irrbb_long_fixed_asset_loses_eve_when_rates_rise():
     assert by["parallel_up"]["delta_eve"] < 0 < by["parallel_down"]["delta_eve"]
     # passivo reprecifica em 3 meses: paga 2% a mais por 9 meses
     assert isclose(by["parallel_up"]["delta_nii"], -90 * 0.02 * 0.75)
+
+
+def test_stress_rates_position_uses_duration_and_convexity():
+    p = {"factor": "rates", "value": 1000, "duration": 4, "convexity": 20}
+    pnl = stress.position_pnl(p, {"equity": 0, "fx": 0, "rates": 0.01})
+    assert isclose(pnl, 1000 * (-0.04 + 0.5 * 20 * 0.0001))
+
+
+def test_stress_reverse_multiplier_reaches_loss_limit():
+    positions = [{"name": "Ações", "factor": "equity", "value": 1000, "vol_annual": 0.25,
+                  "duration": 0, "convexity": 0}]
+    rho = {"equity_fx": 0, "equity_rates": 0, "fx_rates": 0}
+    res = stress.run(positions, rho, 0.99, loss_limit=200,
+                     custom={"equity": -0.10, "fx": 0, "rates": 0})
+    custom = next(s for s in res["scenarios"] if s["key"] == "custom")
+    assert isclose(custom["total_pnl"], -100)
+    assert isclose(custom["reverse_multiplier"], 2)

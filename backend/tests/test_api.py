@@ -31,3 +31,14 @@ def test_irrbb_endpoint():
     })
     assert r.status_code == 200
     assert len(r.json()["scenarios"]) == 6
+
+
+def test_stress_endpoint():
+    r = client.post("/api/market/stress", json={"positions": [
+        {"name": "Ações", "factor": "equity", "value": 1000, "vol_annual": 0.25},
+        {"name": "Dólar", "factor": "fx", "value": 500, "vol_annual": 0.15},
+    ]})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["var_10d"] > body["var_1d"] > 0
+    assert len(body["scenarios"]) == 6
