@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Bar, BarChart, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from "recharts";
 import { useCompute } from "../../api";
 import { axisProps, gridProps, TooltipBox } from "../../components/chart";
 import { EditableTable, type Column } from "../../components/EditableTable";
-import { Callout, Formula, Lab, M, RegNote, SelectField, Stat } from "../../components/ui";
+import { Callout, Formula, Lab, Legend, M, RegNote, SelectField, Stat } from "../../components/ui";
 import { fmtCompact, fmtMoney, fmtPct } from "../../format";
 
 type Scenario = "medium" | "high" | "low";
@@ -16,6 +18,18 @@ type Resp = {
   requirement: number;
   rwa: number;
   correlation: Record<Scenario, number[][]>;
+  curvature: {
+    options: { name: string; curve: string; value: number; dv01: number; cvr_up: number; cvr_down: number }[];
+    cvr_up: number; cvr_down: number; shock: number;
+    scenarios: Record<Scenario, number>;
+    profile: { shift_bps: number; value: number; linear: number }[];
+  };
+  totals: Record<Scenario, number>;
+};
+
+type OptionRow = {
+  name: string; curve: string; kind: "call" | "put"; quantity: number;
+  strike: number; rate: number; vol: number; expiry_du: number; underlying_du: string;
 };
 
 const VERTICES = [1, 63, 126, 252, 504, 756, 1260, 2520, 3780, 5040, 7560];
@@ -35,6 +49,10 @@ export default function RWASensPage() {
     toRow("Cupom cambial", "USD", "BRL", { 3: 1500, 4: 1000 }),
     toRow("Treasuries", "USD", "USD", { 7: -800 }),
   ]);
+  const [options, setOptions] = useState<OptionRow[]>([
+    { name: "Calls de taxa DI1 vendidas", curve: "Pré (DI e prefixados)", kind: "call", quantity: -500,
+      strike: 0.145, rate: 0.14, vol: 0.02, expiry_du: 252, underlying_du: "504" },
+  ]);
   const [investmentGrade, setInvestmentGrade] = useState(false);
   const [heatScenario, setHeatScenario] = useState<Scenario>("medium");
 
@@ -42,7 +60,12 @@ export default function RWASensPage() {
     name: r.name, currency: r.currency, settlement: r.settlement,
     dv01: VERTICES.map((_, i) => r[`d${i}`]),
   }));
-  const { data, error } = useCompute<Resp>("/capital/rwa-sens/girr-delta", { curves, brazil_investment_grade: investmentGrade });
+  const { data, error } = useCompute<Resp>("/capital/rwa-sens/girr-delta", {
+    curves,
+    options: options.map((o) => ({ ...o, underlying_du: Number(o.underlying_du) })),
+    brazil_investment_grade: investmentGrade,
+  });
+  const brlCurves = rows.filter((r) => r.currency === "BRL").map((r): [string, string] => [r.name, r.name]);
 
   const columns: Column<Row>[] = [
     { key: "name", label: "Curva", type: "text", width: 170 },
@@ -135,12 +158,39 @@ export default function RWASensPage() {
       </p>
       <Formula tex={String.raw`\text{RWA}_{\text{SENS}} = \frac{1}{8\%}\,\max\big(R_{\text{alta}}, R_{\text{média}}, R_{\text{baixa}}\big), \qquad R = \Delta + \text{Vega} + \text{Curvatura} \text{ (todas as classes)}`} />
       <p className="muted" style={{ fontSize: 14 }}>
-        Na conta completa, o máximo é tomado depois de somar todas as classes de risco e componentes em cada
-        cenário. Aqui, só com o Delta GIRR, isso equivale ao máximo do próprio Delta.
+        Na conta completa, o máximo é tomado depois de somar todas as classes e componentes em cada cenário.
+        Aqui somamos Delta e Curvatura GIRR por cenário e depois tomamos o máximo.
       </p>
 
-      <h2>6. Laboratório</h2>
-      <Lab title="Calcule o Delta GIRR de uma carteira">
+      <h2>6. Curvatura: o que o Delta não vê</h2>
+      <p>
+        O Delta é uma aproximação linear: supõe que o valor muda proporcionalmente ao choque. Para uma
+        <strong> opção</strong> isso não vale — o valor é convexo (comprado em opção) ou côncavo (vendido). A
+        Curvatura mede a <strong>perda além da reta</strong> num choque grande, para cima e para baixo:
+      </p>
+      <Formula tex={String.raw`CVR_k^{+} = -\sum_i \Big[V_i\big(x_k^{+RW}\big) - V_i(x_k) - RW^{curv}\, s_{ik}\Big] \qquad CVR_k^{-} = -\sum_i \Big[V_i\big(x_k^{-RW}\big) - V_i(x_k) + RW^{curv}\, s_{ik}\Big]`} />
+      <ul>
+        <li>Para GIRR, o fator de risco é a <strong>curva inteira</strong> de cada moeda, e o choque é <strong>paralelo de ±1,7%</strong> (art. 96) — menor que o ponderador Delta do real, que chega a 3,2%;</li>
+        <li><M>{"s_{ik}"}</M> é a soma das sensibilidades Delta da opção a todos os vértices da curva (art. 90);</li>
+        <li>Comprado em opção: o valor fica <em>acima</em> da reta nos dois lados, os CVR são negativos e não há capital;</li>
+        <li>Vendido em opção: perde mais que o linear para os dois lados — é aí que a Curvatura cobra capital.</li>
+      </ul>
+      <p>Na categoria (moeda), escolhe-se o pior lado; entre curvas da mesma moeda, <M>{String.raw`\rho = 99{,}8\%`}</M>; entre moedas, <M>{String.raw`\gamma = 25\%`}</M>:</p>
+      <Formula tex={String.raw`K_b = \max\big(K_b^{+},\, K_b^{-}\big), \qquad K_b^{\pm} = \sqrt{\max\Big(0,\; \sum_k \max(0, CVR_k^{\pm})^2 + \sum_k\sum_{\ell\neq k} \rho_{k\ell}\, CVR_k^{\pm}\, CVR_\ell^{\pm}\, \psi\Big)}`} />
+      <p className="muted" style={{ fontSize: 14 }}>
+        ψ vale zero quando os dois CVR são negativos (dois ganhos não se compensam com perdas de terceiros) e
+        um nos demais casos. Os mesmos três cenários de correlação valem aqui — mas, com uma única curva em
+        reais, a Curvatura é igual nos três: a diferença entre cenários vem do Delta.
+      </p>
+      <Callout title="Opção sobre a taxa DI1 (como modelamos)">
+        Uma <strong>call de taxa</strong> ganha quando o DI sobe: no vencimento paga, por contrato,
+        PU(K) − PU(r<sub>T</sub>), com PU(r) = 100.000 / (1 + r)<sup>DU/252</sup> para os dias úteis restantes do DI1. A taxa
+        terminal segue uma normal (modelo de Bachelier) com volatilidade anual em pontos percentuais. Sem desconto
+        do prêmio — o objetivo é mostrar a forma da curva de valor, não precificar para negociação.
+      </Callout>
+
+      <h2>7. Laboratório</h2>
+      <Lab title="Calcule o Delta e a Curvatura GIRR de uma carteira">
         <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
           Informe o DV01 de cada curva por vértice: a variação de valor, em R$, para +1 bp. Negativo = perde com alta de juros.
         </p>
@@ -149,6 +199,34 @@ export default function RWASensPage() {
           onChange={setRows}
           newRow={() => toRow("Nova curva", "BRL", "BRL", {})}
           columns={columns}
+        />
+        <h3>Opções sobre a taxa DI1</h3>
+        <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
+          O delta de cada opção é somado à curva em reais escolhida, no vértice do DI1 subjacente. Quantidade negativa = vendido.
+        </p>
+        <EditableTable<OptionRow>
+          rows={options}
+          onChange={setOptions}
+          newRow={() => ({ name: "Nova opção", curve: brlCurves[0]?.[0] ?? "Pré", kind: "call", quantity: 100,
+            strike: 0.14, rate: 0.14, vol: 0.02, expiry_du: 126, underlying_du: "252" })}
+          columns={[
+            { key: "name", label: "Opção", type: "text", width: 180 },
+            { key: "curve", label: "Curva", type: "select", options: brlCurves.length ? brlCurves : [["Pré", "Pré"]], width: 170 },
+            { key: "kind", label: "Tipo", type: "select", options: [["call", "Call de taxa"], ["put", "Put de taxa"]], width: 120 },
+            { key: "quantity", label: "Contratos", type: "number", width: 90 },
+            { key: "strike", label: "Strike", type: "percent", width: 80 },
+            { key: "rate", label: "Taxa DI1", type: "percent", width: 80 },
+            { key: "vol", label: "Vol. normal", type: "percent", width: 80 },
+            { key: "expiry_du", label: "Venc. opção (DU)", type: "number", width: 90 },
+            { key: "underlying_du", label: "DI1 (DU)", type: "select", width: 100,
+              options: VERTICES.slice(2).map((v) => [String(v), `${v.toLocaleString("pt-BR")} DU`]) },
+          ]}
+          computed={data && data.curvature.options.length === options.length ? [
+            { label: "Valor", values: data.curvature.options.map((o) => fmtMoney(o.value)) },
+            { label: "DV01", values: data.curvature.options.map((o) => fmtMoney(o.dv01)) },
+            { label: "CVR⁺", values: data.curvature.options.map((o) => fmtMoney(o.cvr_up)) },
+            { label: "CVR⁻", values: data.curvature.options.map((o) => fmtMoney(o.cvr_down)) },
+          ] : []}
         />
         <div className="grid" style={{ marginTop: 16 }}>
           <SelectField label="Rating do Brasil" value={investmentGrade ? "ig" : "hy"} onChange={(v) => setInvestmentGrade(v === "ig")}
@@ -165,6 +243,9 @@ export default function RWASensPage() {
           <li>Mude o rating do Brasil para grau de investimento: o capital das curvas em reais cai cerca de 29% (fator 0,7071).</li>
           <li>Mude a liquidação dos Treasuries para BRL: o fator de categoria sobe de 0,7071 para 1,0.</li>
           <li>Ponha o mesmo DV01 em 3 meses e em 30 anos com sinais opostos: a correlação de apenas 40% quase não deixa o hedge funcionar.</li>
+          <li><strong>Hedge de delta não elimina a curvatura:</strong> some ao vértice de 2 anos da curva Pré o DV01 da opção com sinal trocado (cerca de +1.345). O delta da opção some, mas o CVR⁺ continua lá — vendido em opção é vendido em convexidade.</li>
+          <li>Troque a quantidade da opção para +500 (comprado): os CVR ficam negativos e a Curvatura vai a zero.</li>
+          <li>Aproxime o strike da taxa (opção no dinheiro) e veja os dois CVR ficarem parecidos; afaste o strike e a curvatura cai.</li>
         </ul>
       </Callout>
 
@@ -184,33 +265,51 @@ function Results({ data, heatScenario, setHeatScenario }: {
   data: Resp; heatScenario: Scenario; setHeatScenario: (s: Scenario) => void;
 }) {
   const scen: Scenario[] = ["medium", "high", "low"];
-  const bars = scen.map((s) => ({ s, label: SCEN_LABEL[s], delta: data.scenarios[s].delta }));
+  const curv = data.curvature;
+  const bars = scen.map((s) => ({
+    s, label: SCEN_LABEL[s] + (s === data.binding_scenario ? " ★" : ""),
+    delta: data.scenarios[s].delta, curvature: curv.scenarios[s], total: data.totals[s],
+  }));
   const currencies = data.scenarios.medium.categories.map((c) => c.currency);
 
   return (
     <>
       <div className="stats">
         {scen.map((s) => (
-          <Stat key={s} label={`Δ GIRR — ${SCEN_LABEL[s].toLowerCase()}`} value={fmtMoney(data.scenarios[s].delta)}
-            sub={s === data.binding_scenario ? <span className="badge"><span className="dot" style={{ background: "var(--series-1)" }} />Define o capital</span> : undefined} />
+          <Stat key={s} label={SCEN_LABEL[s]} value={fmtMoney(data.totals[s])}
+            sub={<>
+              Δ {fmtMoney(data.scenarios[s].delta)} + Curv. {fmtMoney(curv.scenarios[s])}
+              {s === data.binding_scenario && (
+                <div style={{ marginTop: 4 }}><span className="badge"><span className="dot" style={{ background: "var(--series-1)" }} />Define o capital</span></div>
+              )}
+            </>} />
         ))}
-        <Stat label="RWA SENS (só Delta GIRR)" value={fmtMoney(data.rwa)} sub={`= ${fmtMoney(data.requirement)} ÷ 8%`} />
+        <Stat label="RWA SENS (Delta + Curvatura GIRR)" value={fmtMoney(data.rwa)} sub={`= ${fmtMoney(data.requirement)} ÷ 8%`} />
       </div>
 
-      <div className="chart-title">Requerimento Delta GIRR por cenário de correlação</div>
-      <div className="chart-sub">Vale o maior dos três (barra em destaque).</div>
+      <div className="chart-title">Requerimento GIRR por cenário de correlação</div>
+      <div className="chart-sub">Delta e Curvatura somados em cada cenário; vale o maior total (★).</div>
+      <Legend items={[
+        { label: "Delta", color: "var(--series-1)", box: true },
+        { label: "Curvatura", color: "var(--series-2)", box: true },
+      ]} />
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={bars} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
           <CartesianGrid {...gridProps} vertical horizontal={false} />
           <XAxis type="number" tickFormatter={fmtCompact} {...axisProps} />
-          <YAxis type="category" dataKey="label" {...axisProps} width={130} />
+          <YAxis type="category" dataKey="label" {...axisProps} width={140} />
           <Tooltip cursor={{ fill: "var(--surface-2)" }} content={({ active, payload }) =>
-            active && payload?.length ? <TooltipBox title={payload[0].payload.label} rows={[{ label: "Δ GIRR", value: fmtMoney(payload[0].payload.delta) }]} /> : null} />
-          <Bar dataKey="delta" radius={4} maxBarSize={28} isAnimationActive={false}>
-            {bars.map((b) => <Cell key={b.s} fill={b.s === data.binding_scenario ? "var(--series-1)" : "var(--axis)"} />)}
-          </Bar>
+            active && payload?.length ? <TooltipBox title={payload[0].payload.label} rows={[
+              { label: "Delta", value: fmtMoney(payload[0].payload.delta), color: "var(--series-1)" },
+              { label: "Curvatura", value: fmtMoney(payload[0].payload.curvature), color: "var(--series-2)" },
+              { label: "Total", value: fmtMoney(payload[0].payload.total) },
+            ]} /> : null} />
+          <Bar dataKey="delta" stackId="r" fill="var(--series-1)" stroke="var(--surface)" strokeWidth={2} maxBarSize={28} isAnimationActive={false} />
+          <Bar dataKey="curvature" stackId="r" fill="var(--series-2)" stroke="var(--surface)" strokeWidth={2} maxBarSize={28} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
+
+      {curv.profile.length > 0 && <CurvatureChart data={data} />}
 
       <h3>Sensibilidades ponderadas (WS = NS × RW)</h3>
       <div className="table-wrap">
@@ -259,6 +358,57 @@ function Results({ data, heatScenario, setHeatScenario }: {
           options={scen.map((s) => [s, SCEN_LABEL[s]])} />
       </div>
       <Heatmap matrix={data.correlation[heatScenario]} labels={YEARS.slice(1)} />
+    </>
+  );
+}
+
+function CurvatureChart({ data }: { data: Resp }) {
+  const curv = data.curvature;
+  const shockBps = Math.round(curv.shock * 10000);
+  const at = (bps: number) => curv.profile.find((p) => p.shift_bps === bps);
+  const up = at(shockBps);
+  const down = at(-shockBps);
+  return (
+    <>
+      <h3>A não linearidade das opções</h3>
+      <div className="stats">
+        <Stat label={`CVR⁺ (curva +${shockBps} bps)`} value={fmtMoney(curv.cvr_up)} sub={curv.cvr_up > 0 ? "perda além do linear" : "ganho além do linear"} />
+        <Stat label={`CVR⁻ (curva −${shockBps} bps)`} value={fmtMoney(curv.cvr_down)} sub={curv.cvr_down > 0 ? "perda além do linear" : "ganho além do linear"} />
+        <Stat label="Curvatura GIRR" value={fmtMoney(curv.scenarios.medium)} sub="= max(0, pior CVR), com uma curva só" />
+      </div>
+      <div className="chart-title">Valor das opções vs. aproximação linear (Delta) por deslocamento paralelo da curva</div>
+      <div className="chart-sub">
+        A distância vertical entre as linhas nas marcas de ±{shockBps} bps é o CVR. Linhas verticais: choques da Curvatura.
+      </div>
+      <Legend items={[
+        { label: "Valor reprecificado", color: "var(--series-2)" },
+        { label: "Aproximação linear (Delta)", color: "var(--series-1)" },
+      ]} />
+      <ResponsiveContainer width="100%" height={280}>
+        <LineChart data={curv.profile} margin={{ top: 10, right: 16, bottom: 4, left: 0 }}>
+          <CartesianGrid {...gridProps} />
+          <XAxis dataKey="shift_bps" type="number" domain={[-300, 300]} ticks={[-300, -shockBps, 0, shockBps, 300]}
+            tickFormatter={(v) => `${v > 0 ? "+" : ""}${v} bps`} {...axisProps} />
+          <YAxis tickFormatter={fmtCompact} {...axisProps} width={60} domain={["auto", "auto"]} />
+          <Tooltip content={({ active, payload }) => {
+            if (!active || !payload?.length) return null;
+            const p = payload[0].payload as Resp["curvature"]["profile"][number];
+            return <TooltipBox title={`Curva ${p.shift_bps > 0 ? "+" : ""}${p.shift_bps} bps`} rows={[
+              { label: "Reprecificado", value: fmtMoney(p.value), color: "var(--series-2)" },
+              { label: "Linear", value: fmtMoney(p.linear), color: "var(--series-1)" },
+              { label: "Diferença", value: fmtMoney(p.value - p.linear) },
+            ]} />;
+          }} />
+          <ReferenceLine x={shockBps} stroke="var(--axis)" strokeDasharray="4 3" />
+          <ReferenceLine x={-shockBps} stroke="var(--axis)" strokeDasharray="4 3" />
+          <Line dataKey="linear" stroke="var(--series-1)" strokeWidth={2} dot={false} isAnimationActive={false} />
+          <Line dataKey="value" stroke="var(--series-2)" strokeWidth={2} dot={false} isAnimationActive={false} />
+          {up && down && <>
+            <ReferenceLine segment={[{ x: shockBps, y: up.linear }, { x: shockBps, y: up.value }]} stroke="var(--critical)" strokeWidth={3} />
+            <ReferenceLine segment={[{ x: -shockBps, y: down.linear }, { x: -shockBps, y: down.value }]} stroke="var(--critical)" strokeWidth={3} />
+          </>}
+        </LineChart>
+      </ResponsiveContainer>
     </>
   );
 }

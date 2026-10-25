@@ -1,14 +1,19 @@
-"""RWA SENS — componente Delta da classe GIRR (juros livres de risco).
+"""RWA SENS — componentes Delta e Curvatura da classe GIRR (juros livres de risco).
 
 Parâmetros conforme a Resolução BCB nº 470/2025 (texto anexo ao Voto BCB nº 42/2025):
-vértices do art. 9º, ponderadores dos Anexos I e I-A, correlações do Anexo VII e
-arts. 31, 32, 38–42.
+- Delta: vértices do art. 9º, ponderadores dos Anexos I e I-A, correlações do Anexo VII
+  e arts. 31, 32, 38–42;
+- Curvatura: arts. 83, 90, 95–98, 100, 102, 108–115. O CVR⁻ usa o termo linear com sinal
+  positivo, como em Basileia (MAR21.5), correção trazida pela Resolução BCB nº 592/2026.
 
-Simplificações: só Delta GIRR (sem Vega, Curvatura, RRAO e demais classes de risco) e
-sem o fator de risco de expectativas de índices de preço.
+Simplificações: sem Vega, RRAO e demais classes de risco; sem o fator de expectativas de
+índices de preço; as linhas de DV01 são tratadas como lineares (CVR nulo) e só as opções
+sobre DI1 geram curvatura.
 """
 
 from math import sqrt
+
+import numpy as np
 
 VERTICES_DU = [1, 63, 126, 252, 504, 756, 1260, 2520, 3780, 5040, 7560]
 
@@ -102,6 +107,136 @@ def _class_requirement(k: dict[str, float], s: dict[str, float], gamma: float) -
 
 def girr_delta(curves: list[dict], brazil_investment_grade: bool) -> dict:
     """Cada curva: name, currency (categoria), settlement e dv01 por vértice (R$ por +1 bp)."""
+    return girr(curves, [], brazil_investment_grade)
+
+
+# ---------------------------------------------------------------- Curvatura
+
+RW_CURV_GIRR = 0.017  # art. 96, I: choque paralelo de ±1,7% na curva
+RHO_CURV_GIRR = 0.998  # art. 102: entre curvas da mesma moeda
+GAMMA_CURV_GIRR = 0.25  # art. 112, I: entre moedas
+PU_FACE = 100_000.0  # valor de face do contrato DI1
+_GH_X, _GH_W = np.polynomial.hermite_e.hermegauss(80)
+_GH_W = _GH_W / np.sqrt(2 * np.pi)
+
+
+def di1_pu(rate: float | np.ndarray, business_days: float):
+    return PU_FACE / (1 + rate) ** (business_days / 252)
+
+
+def di_option_value(opt: dict, shift: float = 0.0) -> float:
+    """Opção europeia sobre a taxa do DI1, com taxa terminal normal (modelo de Bachelier).
+
+    Call de taxa ganha se a taxa subir: paga PU(K) − PU(r_T) por contrato; put, o inverso.
+    `shift` é um deslocamento paralelo da curva (decimal). Sem desconto do prêmio.
+    """
+    t = opt["expiry_du"] / 252
+    remaining = opt["underlying_du"] - opt["expiry_du"]
+    r_t = opt["rate"] + shift + opt["vol"] * sqrt(t) * _GH_X
+    payoff = di1_pu(opt["strike"], remaining) - di1_pu(r_t, remaining)
+    if opt["kind"] == "put":
+        payoff = -payoff
+    return float(opt["quantity"] * (_GH_W * np.maximum(payoff, 0.0)).sum())
+
+
+def option_dv01(opt: dict) -> float:
+    return di_option_value(opt, 0.0001) - di_option_value(opt, 0.0)
+
+
+def cvr(opt: dict) -> tuple[float, float]:
+    """Art. 95: perda além da aproximação linear nos choques +RW e −RW."""
+    v0 = di_option_value(opt)
+    s = option_dv01(opt) / 0.0001  # art. 90: soma das sensibilidades Delta da curva
+    up = -(di_option_value(opt, RW_CURV_GIRR) - v0 - RW_CURV_GIRR * s)
+    down = -(di_option_value(opt, -RW_CURV_GIRR) - v0 + RW_CURV_GIRR * s)
+    return up, down
+
+
+def _psi(a: float, b: float) -> float:
+    return 0.0 if a < 0 and b < 0 else 1.0
+
+
+def _curvature_category(up: list[float], down: list[float], scenario: str) -> tuple[float, float]:
+    """Art. 100 §2: K_b = max(K⁺, K⁻); devolve (K_b, S_b do lado escolhido)."""
+    rho = stress_correlation(RHO_CURV_GIRR, scenario)
+
+    def side(c: list[float]) -> float:
+        total = sum(max(0.0, x) ** 2 for x in c)
+        total += sum(rho * a * b * _psi(a, b) for i, a in enumerate(c) for j, b in enumerate(c) if i != j)
+        return sqrt(max(0.0, total))
+
+    k_up, k_down = side(up), side(down)
+    if k_up > k_down or (k_up == k_down and sum(up) >= sum(down)):
+        return k_up, sum(up)
+    return k_down, sum(down)
+
+
+def _curvature_class(k: dict[str, float], s: dict[str, float], scenario: str) -> float:
+    """Art. 110: agregação entre moedas com γ e ψ."""
+    gamma = stress_correlation(GAMMA_CURV_GIRR, scenario)
+    total = sum(v ** 2 for v in k.values())
+    total += sum(gamma * s[b] * s[c] * _psi(s[b], s[c]) for b in k for c in k if b != c)
+    return sqrt(max(0.0, total))
+
+
+def girr(curves: list[dict], options: list[dict], brazil_investment_grade: bool) -> dict:
+    """Delta e Curvatura GIRR. Opções sobre DI1 entram no Delta da curva `curve` (em BRL)."""
+    curves = [dict(c, dv01=list(c["dv01"])) for c in curves]
+    option_rows = []
+    for o in options:
+        dv01 = option_dv01(o)
+        up, down = cvr(o)
+        target = next((c for c in curves if c["name"] == o["curve"] and c["currency"] == "BRL"), None)
+        if target is None:
+            target = {"name": o["curve"], "currency": "BRL", "settlement": "BRL", "dv01": [0.0] * len(VERTICES_DU)}
+            curves.append(target)
+        target["dv01"][VERTICES_DU.index(o["underlying_du"])] += dv01
+        option_rows.append({"name": o["name"], "curve": o["curve"], "value": di_option_value(o),
+                            "dv01": dv01, "cvr_up": up, "cvr_down": down})
+
+    delta = _girr_delta(curves, brazil_investment_grade)
+
+    # Curvatura: um fator por curva; categorias por moeda (aqui, só curvas em reais)
+    by_curve: dict[str, list[float]] = {}
+    for r in option_rows:
+        acc = by_curve.setdefault(r["curve"], [0.0, 0.0])
+        acc[0] += r["cvr_up"]
+        acc[1] += r["cvr_down"]
+    curvature = {}
+    for scen in SCENARIOS:
+        if by_curve:
+            kb, sb = _curvature_category([v[0] for v in by_curve.values()], [v[1] for v in by_curve.values()], scen)
+            curvature[scen] = _curvature_class({"BRL": kb}, {"BRL": sb}, scen)
+        else:
+            curvature[scen] = 0.0
+
+    totals = {sc: delta["scenarios"][sc]["delta"] + curvature[sc] for sc in SCENARIOS}
+    binding = max(SCENARIOS, key=lambda sc: totals[sc])
+    shock_bps = round(RW_CURV_GIRR * 10000)
+    shifts = [x / 10000 for x in sorted(set(range(-300, 301, 25)) | {-shock_bps, shock_bps})]
+    profile = [{
+        "shift_bps": round(sh * 10000),
+        "value": sum(di_option_value(o, sh) for o in options),
+        "linear": sum(di_option_value(o) + option_dv01(o) / 0.0001 * sh for o in options),
+    } for sh in shifts]
+    return {
+        **delta,
+        "curvature": {
+            "options": option_rows,
+            "cvr_up": sum(r["cvr_up"] for r in option_rows),
+            "cvr_down": sum(r["cvr_down"] for r in option_rows),
+            "scenarios": curvature,
+            "shock": RW_CURV_GIRR,
+            "profile": profile if options else [],
+        },
+        "totals": totals,
+        "binding_scenario": binding,
+        "requirement": totals[binding],
+        "rwa": totals[binding] / F,
+    }
+
+
+def _girr_delta(curves: list[dict], brazil_investment_grade: bool) -> dict:
     factors, curve_rows = [], []
     for idx, c in enumerate(curves):
         rw = risk_weights(c["currency"], c["settlement"], brazil_investment_grade)

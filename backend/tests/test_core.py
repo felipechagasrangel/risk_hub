@@ -102,3 +102,35 @@ def test_girr_category_factor_depends_on_settlement_currency():
     assert rwa_sens.category_factor("USD", "USD", False) == 0.7071
     assert rwa_sens.category_factor("USD", "BRL", False) == 1.0  # cupom cambial
     assert rwa_sens.category_factor("BRL", "BRL", True) == 0.7071
+
+
+DI_CALL = {"name": "Call", "curve": "Pré", "kind": "call", "quantity": 1, "strike": 0.145,
+           "rate": 0.14, "vol": 0.02, "expiry_du": 252, "underlying_du": 504}
+
+
+def test_di_option_put_call_parity():
+    # call − put = PU(K) − E[PU(r_T)] (forward do PU), independentemente da volatilidade
+    put = {**DI_CALL, "kind": "put"}
+    lhs = rwa_sens.di_option_value(DI_CALL) - rwa_sens.di_option_value(put)
+    r_t = 0.14 + 0.02 * rwa_sens._GH_X
+    forward = float((rwa_sens._GH_W * rwa_sens.di1_pu(r_t, 252)).sum())
+    assert isclose(lhs, rwa_sens.di1_pu(0.145, 252) - forward, rel_tol=1e-9)
+
+
+def test_curvature_long_option_needs_no_capital_and_short_does():
+    long_up, long_down = rwa_sens.cvr(DI_CALL)
+    assert long_up < 0 and long_down < 0  # comprado em convexidade: ganha além do linear
+    short = {**DI_CALL, "quantity": -1}
+    res = rwa_sens.girr([], [short], False)
+    assert res["curvature"]["scenarios"]["medium"] > 0
+    long_res = rwa_sens.girr([], [DI_CALL], False)
+    assert long_res["curvature"]["scenarios"]["medium"] == 0
+
+
+def test_option_delta_merges_into_named_curve():
+    dv01 = [0.0] * 11
+    curves = [{"name": "Pré", "currency": "BRL", "settlement": "BRL", "dv01": dv01}]
+    res = rwa_sens.girr(curves, [DI_CALL], False)
+    assert len(res["curves"]) == 1
+    ws_2y = res["curves"][0]["weighted_sensitivities"][4]
+    assert isclose(ws_2y, rwa_sens.option_dv01(DI_CALL) / 0.0001 * 0.028)
