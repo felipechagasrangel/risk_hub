@@ -124,6 +124,17 @@ p, li { max-width: 780px; }
 .callout.reg p { margin: 4px 0 0; }
 
 .formula { overflow-x: auto; padding: 4px 0; }
+.formula-legend {
+  margin: 0 0 12px;
+  padding: 8px 14px;
+  border-left: 2px solid var(--grid);
+  font-size: 14px;
+  max-width: 780px;
+}
+.formula-legend-title { color: var(--muted); font-size: 13px; margin-bottom: 2px; }
+.formula-legend-row { display: grid; grid-template-columns: minmax(70px, max-content) 1fr; gap: 12px; padding: 2px 0; }
+.formula-legend-row dt { text-align: right; color: var(--text); }
+.formula-legend-row dd { margin: 0; color: var(--text-2); }
 
 .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .grid-2 { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }

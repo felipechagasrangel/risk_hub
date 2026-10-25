@@ -79,13 +79,13 @@ export default function StressPage() {
 
       <h2>3. Reavaliando a carteira</h2>
       <p>Ações e câmbio respondem linearmente ao choque. Para títulos prefixados, usamos duration e convexidade:</p>
-      <Formula tex={String.raw`\text{P\&L}_{\text{ações}} = V \cdot \Delta S \qquad \text{P\&L}_{\text{pré}} \approx V\left(-D\,\Delta y + \tfrac{1}{2}\,C\,\Delta y^2\right)`} />
+      <Formula tex={String.raw`\text{P\&L}_{\text{ações}} = V \cdot \Delta S \qquad \text{P\&L}_{\text{pré}} \approx V\left(-D\,\Delta y + \tfrac{1}{2}\,C\,\Delta y^2\right)`} where={[[String.raw`\text{P\&L}`, "ganho (+) ou perda (−) da posição no cenário"], [String.raw`V`, "exposição da posição, em R$"], [String.raw`\Delta S`, "variação percentual do preço ou do câmbio no cenário"], [String.raw`D`, "duration modificada do título prefixado, em anos"], [String.raw`C`, "convexidade do título"], [String.raw`\Delta y`, "variação da taxa de juros, em decimal (0,01 = 100 bps)"]]} />
       <p>
         A convexidade <M>C</M> é sempre a favor de quem está comprado: suaviza perdas quando os juros
         sobem e amplia ganhos quando caem. Com choques grandes, ignorá-la superestima a perda.
       </p>
       <p>No stress reverso linear, o multiplicador que leva o cenário ao limite de perda é simplesmente:</p>
-      <Formula tex={String.raw`k = \frac{\text{Limite de perda}}{\text{Perda no cenário}}`} />
+      <Formula tex={String.raw`k = \frac{\text{Limite de perda}}{\text{Perda no cenário}}`} where={[[String.raw`k`, "multiplicador do cenário: k < 1 significa que o cenário já rompe o limite"], [String.raw`\text{Limite de perda}`, "perda máxima tolerada pela instituição, em R$"], [String.raw`\text{Perda no cenário}`, "perda total da carteira no cenário original"]]} />
 
       <h2>4. Os cenários</h2>
       <p className="muted" style={{ fontSize: 14 }}>

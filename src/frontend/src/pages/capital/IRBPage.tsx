@@ -34,7 +34,7 @@ export default function IRBPage() {
         <li><strong>EAD</strong> — exposição no momento do default;</li>
         <li><strong>M</strong> — prazo efetivo (maturidade).</li>
       </ul>
-      <Formula tex={String.raw`\text{EL} = \text{PD} \times \text{LGD} \times \text{EAD}`} />
+      <Formula tex={String.raw`\text{EL} = \text{PD} \times \text{LGD} \times \text{EAD}`} where={[[String.raw`\text{EL}`, "perda esperada, em R$"], [String.raw`\text{PD}`, "probabilidade de default em 1 ano"], [String.raw`\text{LGD}`, "perda dado o default, em % da exposição"], [String.raw`\text{EAD}`, "exposição no momento do default, em R$"]]} />
       <p>
         A <strong>perda esperada (EL)</strong> é custo do negócio: deve estar no preço do crédito e nas
         provisões. O <strong>capital</strong> existe para a <strong>perda inesperada (UL)</strong>: a
@@ -47,10 +47,10 @@ export default function IRBPage() {
         correlação <M>R</M>. Num cenário econômico tão ruim que só acontece 1 vez em 1.000 anos
         (99,9%), a PD de cada tomador vira a <strong>PD condicional</strong>:
       </p>
-      <Formula tex={String.raw`\text{PD}_{99{,}9\%} = N\!\left(\frac{N^{-1}(\text{PD}) + \sqrt{R}\; N^{-1}(0{,}999)}{\sqrt{1-R}}\right)`} />
+      <Formula tex={String.raw`\text{PD}_{99{,}9\%} = N\!\left(\frac{N^{-1}(\text{PD}) + \sqrt{R}\; N^{-1}(0{,}999)}{\sqrt{1-R}}\right)`} where={[[String.raw`\text{PD}_{99{,}9\%}`, "PD condicional: a probabilidade de default num cenário econômico de 1 em 1.000 anos"], [String.raw`N(\cdot)`, "função de distribuição acumulada da normal padrão"], [String.raw`N^{-1}(\cdot)`, "inversa da normal acumulada (quantil)"], [String.raw`R`, "correlação dos ativos do tomador com o fator sistêmico (a economia)"], [String.raw`0{,}999`, "nível de confiança de 99,9%"]]} />
       <p>O capital por unidade de EAD é a perda nesse cenário menos a perda esperada, com ajuste de prazo:</p>
-      <Formula tex={String.raw`K = \left[\text{LGD}\cdot \text{PD}_{99{,}9\%} - \text{PD}\cdot\text{LGD}\right] \cdot \frac{1 + (M-2{,}5)\,b}{1 - 1{,}5\,b}, \quad b = (0{,}11852 - 0{,}05478 \ln \text{PD})^2`} />
-      <Formula tex={String.raw`\text{RWA} = 12{,}5 \times K \times \text{EAD}`} />
+      <Formula tex={String.raw`K = \left[\text{LGD}\cdot \text{PD}_{99{,}9\%} - \text{PD}\cdot\text{LGD}\right] \cdot \frac{1 + (M-2{,}5)\,b}{1 - 1{,}5\,b}, \quad b = (0{,}11852 - 0{,}05478 \ln \text{PD})^2`} where={[[String.raw`K`, "capital exigido por unidade de EAD"], [String.raw`\text{LGD} \cdot \text{PD}_{99{,}9\%}`, "perda no cenário de estresse"], [String.raw`\text{PD} \cdot \text{LGD}`, "perda esperada, coberta por provisões e não por capital"], [String.raw`M`, "prazo efetivo da exposição, em anos (de 1 a 5)"], [String.raw`b`, "ajuste de prazo, maior para tomadores de melhor qualidade"], [String.raw`2{,}5`, "prazo de referência, em anos"]]} />
+      <Formula tex={String.raw`\text{RWA} = 12{,}5 \times K \times \text{EAD}`} where={[[String.raw`\text{RWA}`, "ativos ponderados pelo risco da exposição"], [String.raw`12{,}5`, "1 ÷ 8%: converte capital em RWA"], [String.raw`K`, "capital por unidade de EAD"], [String.raw`\text{EAD}`, "exposição no default, em R$"]]} />
       <p>
         Para empresas, a correlação cai de 24% para 12% conforme a PD aumenta: empresas boas
         quebram quase só quando a economia inteira vai mal (alta correlação); as frágeis quebram

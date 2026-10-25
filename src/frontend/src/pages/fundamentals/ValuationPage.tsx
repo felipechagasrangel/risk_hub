@@ -46,7 +46,7 @@ export default function ValuationPage() {
             O ativo é registrado pelo preço pago e cresce todo dia à <strong>taxa efetiva da operação</strong>,
             a taxa contratada na origem. O valor não muda se o mercado mudar: só passa o tempo.
           </p>
-          <Formula tex={String.raw`V^{\text{curva}}_t = P_0\,(1 + y_0)^{t}`} />
+          <Formula tex={String.raw`V^{\text{curva}}_t = P_0\,(1 + y_0)^{t}`} where={[[String.raw`V^{\text{curva}}_t`, "valor do título na curva na data t"], [String.raw`P_0`, "preço pago na compra"], [String.raw`y_0`, "taxa efetiva da compra, ao ano"], [String.raw`t`, "tempo desde a compra, em anos (dias úteis ÷ 252)"]]} />
           <p style={{ marginBottom: 0 }}>Responde: <em>quanto este ativo me rende se eu o carregar até o fim?</em></p>
         </div>
         <div className="card" style={{ margin: 0 }}>
@@ -55,7 +55,7 @@ export default function ValuationPage() {
             O ativo é reavaliado pelo preço que se obteria <strong>hoje</strong>: os fluxos restantes são
             descontados pela taxa de mercado do dia. Se os juros sobem, o valor cai.
           </p>
-          <Formula tex={String.raw`V^{\text{MTM}}_t = \frac{F}{(1 + y^{\text{mercado}}_t)^{T - t}}`} />
+          <Formula tex={String.raw`V^{\text{MTM}}_t = \frac{F}{(1 + y^{\text{mercado}}_t)^{T - t}}`} where={[[String.raw`V^{\text{MTM}}_t`, "valor a mercado do título na data t"], [String.raw`F`, "valor de face, pago no vencimento"], [String.raw`y^{\text{mercado}}_t`, "taxa de mercado em t para o prazo restante"], [String.raw`T`, "data de vencimento, em anos"], [String.raw`T - t`, "prazo restante até o vencimento"]]} />
           <p style={{ marginBottom: 0 }}>Responde: <em>por quanto eu venderia este ativo agora?</em></p>
         </div>
       </div>

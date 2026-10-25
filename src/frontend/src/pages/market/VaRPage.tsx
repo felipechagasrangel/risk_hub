@@ -50,7 +50,7 @@ export default function VaRPage() {
         Seja <M>L</M> a perda da carteira no horizonte <M>h</M> (perda positiva = prejuízo). O VaR
         ao nível de confiança <M>\alpha</M> é o quantil <M>\alpha</M> da distribuição de perdas:
       </p>
-      <Formula tex={String.raw`\text{VaR}_\alpha = \inf\{\, \ell : P(L > \ell) \le 1-\alpha \,\}`} />
+      <Formula tex={String.raw`\text{VaR}_\alpha = \inf\{\, \ell : P(L > \ell) \le 1-\alpha \,\}`} where={[[String.raw`\text{VaR}_\alpha`, "Value at Risk ao nível de confiança α"], [String.raw`L`, "perda da carteira no horizonte (positiva = prejuízo)"], [String.raw`\ell`, "um nível de perda candidato"], [String.raw`P(L > \ell)`, "probabilidade de a perda superar ℓ"], [String.raw`\alpha`, "nível de confiança, por exemplo 99%"], [String.raw`\inf`, "o menor valor de ℓ que satisfaz a condição"]]} />
       <p>
         Exemplo: um VaR 99% de 1 dia de R$ 23 mil significa que, em média, em 1 a cada 100 dias
         a perda será <strong>maior</strong> que R$ 23 mil. Note o que o VaR <strong>não</strong> diz:
@@ -68,7 +68,7 @@ export default function VaRPage() {
         Supõe que os retornos são normais. Basta estimar média <M>\mu</M> e volatilidade
         <M>\sigma</M> e usar o quantil da normal <M>z_\alpha</M> (2,326 para 99%; 1,645 para 95%):
       </p>
-      <Formula tex={String.raw`\text{VaR}_\alpha = V \cdot \left( z_\alpha\, \sigma \sqrt{h} - \mu h \right)`} />
+      <Formula tex={String.raw`\text{VaR}_\alpha = V \cdot \left( z_\alpha\, \sigma \sqrt{h} - \mu h \right)`} where={[[String.raw`V`, "valor da posição, em R$"], [String.raw`z_\alpha`, "quantil da normal padrão: 1,645 a 95% e 2,326 a 99%"], [String.raw`\sigma`, "volatilidade diária dos retornos"], [String.raw`\mu`, "retorno médio diário"], [String.raw`h`, "horizonte, em dias úteis"]]} />
       <p>Rápido e analítico, mas subestima o risco quando as caudas reais são mais pesadas que a normal.</p>
 
       <h3>Histórico</h3>
@@ -77,7 +77,7 @@ export default function VaRPage() {
         e lê o quantil empírico das perdas. Se há 1.000 dias, o VaR 99% é aproximadamente a
         10ª maior perda.
       </p>
-      <Formula tex={String.raw`\text{VaR}_\alpha = \text{quantil}_\alpha\{-V r_1, \dots, -V r_n\} \cdot \sqrt{h}`} />
+      <Formula tex={String.raw`\text{VaR}_\alpha = \text{quantil}_\alpha\{-V r_1, \dots, -V r_n\} \cdot \sqrt{h}`} where={[[String.raw`r_1, \dots, r_n`, "retornos diários observados no histórico"], [String.raw`n`, "número de dias do histórico"], [String.raw`-V r_i`, "perda que a carteira de hoje teria sofrido no dia i"], [String.raw`\text{quantil}_\alpha`, "quantil empírico α das perdas simuladas"], [String.raw`\sqrt{h}`, "escala do VaR de 1 dia para h dias (regra da raiz do tempo)"]]} />
       <p>Captura caudas gordas e assimetria, mas assume que o passado representa o futuro e depende muito da janela escolhida.</p>
 
       <h3>Monte Carlo</h3>
@@ -86,7 +86,7 @@ export default function VaRPage() {
         reavalia a carteira em cada um. É o mais flexível — trata opções e outros instrumentos
         não lineares — mas é tão bom quanto o modelo simulado e computacionalmente caro.
       </p>
-      <Formula tex={String.raw`S_h = S_0 \exp\!\left[(\mu - \tfrac{\sigma^2}{2})h + \sigma \sqrt{h}\, Z\right],\quad Z \sim N(0,1)`} />
+      <Formula tex={String.raw`S_h = S_0 \exp\!\left[(\mu - \tfrac{\sigma^2}{2})h + \sigma \sqrt{h}\, Z\right],\quad Z \sim N(0,1)`} where={[[String.raw`S_0`, "preço do ativo hoje"], [String.raw`S_h`, "preço simulado ao fim do horizonte h"], [String.raw`\mu`, "retorno médio diário (drift)"], [String.raw`\sigma`, "volatilidade diária"], [String.raw`\tfrac{\sigma^2}{2}`, "correção para que o preço esperado cresça à taxa μ"], [String.raw`Z`, "choque aleatório sorteado de uma normal padrão, um por cenário"], [String.raw`h`, "horizonte, em dias úteis"]]} />
 
       <h2>3. Laboratório</h2>
       <Lab title="Gere um histórico de retornos e compare os métodos">
@@ -122,7 +122,7 @@ export default function VaRPage() {
           <li>Agora baixe a confiança para <strong>95%</strong>: a diferença quase some (ou inverte).
             Caudas gordas importam lá no extremo.</li>
           <li>Reduza as simulações de Monte Carlo para 200 e mude a semente: veja o VaR oscilar.
-            O erro de Monte Carlo cai com <M>{String.raw`1/\sqrt{N}`}</M>.</li>
+            O erro de Monte Carlo cai com <M>{String.raw`1/\sqrt{N}`}</M>, em que <M>N</M> é o número de simulações.</li>
         </ul>
       </Callout>
 
@@ -131,9 +131,10 @@ export default function VaRPage() {
         O ES (ou CVaR) é a <strong>perda média nos piores (1−α)% dos casos</strong> — ele olha para
         dentro da cauda, enquanto o VaR só marca sua fronteira:
       </p>
-      <Formula tex={String.raw`\text{ES}_\alpha = E\left[\, L \mid L \ge \text{VaR}_\alpha \,\right]`} />
+      <Formula tex={String.raw`\text{ES}_\alpha = E\left[\, L \mid L \ge \text{VaR}_\alpha \,\right]`} where={[[String.raw`\text{ES}_\alpha`, "Expected Shortfall ao nível α"], [String.raw`L`, "perda da carteira no horizonte"], [String.raw`E[\,\cdot \mid \cdot\,]`, "esperança condicional: a média de L apenas nos cenários em que a condição vale"], [String.raw`\text{VaR}_\alpha`, "Value at Risk ao mesmo nível α"]]} />
       <p>
-        Na normal, <M>{String.raw`\text{ES}_\alpha = V\sigma\sqrt{h}\,\varphi(z_\alpha)/(1-\alpha)`}</M>.
+        Na normal com média zero, <M>{String.raw`\text{ES}_\alpha = V\sigma\sqrt{h}\,\varphi(z_\alpha)/(1-\alpha)`}</M>, em que
+        <M>{String.raw`\varphi`}</M> é a densidade da normal padrão — a 99%, o ES equivale a 2,665σ, contra 2,326σ do VaR.
         Duas razões para preferi-lo: (1) é <strong>subaditivo</strong> — o ES de uma carteira nunca é
         maior que a soma dos ES das partes, o que o VaR não garante; (2) é sensível ao tamanho das
         perdas extremas. Por isso o FRTB (Basileia III para a carteira de negociação) trocou o VaR 99%
@@ -142,7 +143,7 @@ export default function VaRPage() {
 
       <h2>5. Regra da raiz do tempo</h2>
       <p>Se os retornos diários são independentes e identicamente distribuídos, as variâncias se somam:</p>
-      <Formula tex={String.raw`\sigma_h = \sigma_1 \sqrt{h} \quad\Rightarrow\quad \text{VaR}_{10d} \approx \text{VaR}_{1d}\cdot\sqrt{10} \approx 3{,}16 \times \text{VaR}_{1d}`} />
+      <Formula tex={String.raw`\sigma_h = \sigma_1 \sqrt{h} \quad\Rightarrow\quad \text{VaR}_{10d} \approx \text{VaR}_{1d}\cdot\sqrt{10} \approx 3{,}16 \times \text{VaR}_{1d}`} where={[[String.raw`\sigma_1`, "volatilidade de 1 dia"], [String.raw`\sigma_h`, "volatilidade no horizonte de h dias"], [String.raw`h`, "horizonte, em dias úteis"], [String.raw`\text{VaR}_{1d},\ \text{VaR}_{10d}`, "VaR de 1 e de 10 dias"]]} />
       <p>
         É assim que o VaR regulatório de 10 dias era obtido a partir do de 1 dia. A regra falha com
         autocorrelação, clusters de volatilidade ou posições que mudam no período. Teste no

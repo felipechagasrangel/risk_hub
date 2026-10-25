@@ -51,7 +51,7 @@ export default function RWAPage() {
         incentivado a carregar os ativos mais arriscados (que rendem mais). O RWA corrige isso
         aplicando a cada exposição um <strong>fator de ponderação de risco (FPR)</strong>:
       </p>
-      <Formula tex={String.raw`\text{RWA}_{\text{crédito}} = \sum_i \underbrace{\text{Exposição}_i \times \text{CCF}_i}_{\text{EAD}_i} \times \text{FPR}_i`} />
+      <Formula tex={String.raw`\text{RWA}_{\text{crédito}} = \sum_i \underbrace{\text{Exposição}_i \times \text{CCF}_i}_{\text{EAD}_i} \times \text{FPR}_i`} where={[[String.raw`\text{Exposição}_i`, "valor da exposição i (no balanço ou fora dele, como limites e garantias)"], [String.raw`\text{CCF}_i`, "fator de conversão de crédito: quanto do item fora do balanço vira exposição"], [String.raw`\text{EAD}_i`, "exposição no default, já convertida"], [String.raw`\text{FPR}_i`, "fator de ponderação de risco da exposição"]]} />
       <p>
         O <strong>CCF</strong> (fator de conversão de crédito) transforma itens fora do balanço —
         como limites não utilizados e garantias prestadas — em exposição equivalente: um limite
@@ -78,7 +78,7 @@ export default function RWAPage() {
         Além do crédito, há capital para risco de mercado e operacional. Essas parcelas são
         calculadas como exigência de capital e convertidas em RWA multiplicando por 12,5 (= 1/8%):
       </p>
-      <Formula tex={String.raw`\text{RWA} = \text{RWA}_{\text{CPAD}} + 12{,}5 \times K_{\text{mercado}} + 12{,}5 \times K_{\text{operacional}}`} />
+      <Formula tex={String.raw`\text{RWA} = \text{RWA}_{\text{CPAD}} + 12{,}5 \times K_{\text{mercado}} + 12{,}5 \times K_{\text{operacional}}`} where={[[String.raw`\text{RWA}_{\text{CPAD}}`, "parcela de risco de crédito pela abordagem padronizada"], [String.raw`K_{\text{mercado}}`, "exigência de capital para risco de mercado"], [String.raw`K_{\text{operacional}}`, "exigência de capital para risco operacional"], [String.raw`12{,}5`, "1 ÷ 8%: converte capital em RWA"]]} />
       <RegNote>
         <p>
           No Brasil (Resolução CMN nº 4.958/2021) as parcelas são RWA<sub>CPAD</sub>, RWA<sub>MPAD</sub> e RWA<sub>OPAD</sub>.
@@ -99,7 +99,7 @@ export default function RWAPage() {
         <li><strong>Capital Complementar (AT1)</strong>: instrumentos perpétuos que podem ser convertidos ou baixados.</li>
         <li><strong>Nível II (T2)</strong>: dívida subordinada de longo prazo — absorve perdas só na liquidação.</li>
       </ul>
-      <Formula tex={String.raw`\text{Índice de Basileia} = \frac{\text{PR}}{\text{RWA}} \ge 8\% + \text{buffers}`} />
+      <Formula tex={String.raw`\text{Índice de Basileia} = \frac{\text{PR}}{\text{RWA}} \ge 8\% + \text{buffers}`} where={[[String.raw`\text{PR}`, "Patrimônio de Referência: Nível I (CET1 + AT1) + Nível II"], [String.raw`\text{RWA}`, "ativos ponderados pelo risco: crédito + mercado + operacional"], [String.raw`8\%`, "mínimo de capital total"], [String.raw`\text{buffers}`, "adicionais de capital principal: conservação, contracíclico e sistêmico"]]} />
       <div className="table-wrap">
         <table className="data">
           <thead><tr><th>Índice</th><th className="num">Mínimo</th><th className="num">+ Conservação (2,5%)</th></tr></thead>

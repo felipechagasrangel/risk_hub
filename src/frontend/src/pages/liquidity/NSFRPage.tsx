@@ -37,7 +37,7 @@ export default function NSFRPage() {
       </p>
 
       <h2>1. A fórmula</h2>
-      <Formula tex={String.raw`\text{NSFR} = \frac{\text{ASF (funding estável disponível)}}{\text{RSF (funding estável requerido)}} = \frac{\sum_i P_i\, f^{\text{ASF}}_i}{\sum_j A_j\, f^{\text{RSF}}_j} \ge 100\%`} />
+      <Formula tex={String.raw`\text{NSFR} = \frac{\text{ASF (funding estável disponível)}}{\text{RSF (funding estável requerido)}} = \frac{\sum_i P_i\, f^{\text{ASF}}_i}{\sum_j A_j\, f^{\text{RSF}}_j} \ge 100\%`} where={[[String.raw`\text{ASF}`, "funding estável disponível"], [String.raw`\text{RSF}`, "funding estável requerido"], [String.raw`P_i`, "saldo do passivo ou patrimônio i"], [String.raw`f^{\text{ASF}}_i`, "fator ASF: fração de i que é estável por mais de 1 ano"], [String.raw`A_j`, "saldo do ativo j"], [String.raw`f^{\text{RSF}}_j`, "fator RSF: fração de j que precisa de funding estável"]]} />
       <p>
         Cada <strong>passivo</strong> recebe um fator ASF: quanto dele é confiável por mais de um
         ano (capital = 100%; varejo estável = 95%; funding de bancos de curto prazo = 0%). Cada

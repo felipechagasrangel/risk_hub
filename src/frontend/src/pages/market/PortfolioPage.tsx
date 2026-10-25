@@ -49,9 +49,9 @@ export default function PortfolioPage() {
       <p>
         Com exposições <M>w</M> (em moeda) e matriz de covariância <M>\Sigma</M>, a volatilidade da carteira é:
       </p>
-      <Formula tex={String.raw`\sigma_P = \sqrt{w^\top \Sigma\, w}, \qquad \Sigma_{ij} = \rho_{ij}\,\sigma_i\,\sigma_j`} />
+      <Formula tex={String.raw`\sigma_P = \sqrt{w^\top \Sigma\, w}, \qquad \Sigma_{ij} = \rho_{ij}\,\sigma_i\,\sigma_j`} where={[[String.raw`\sigma_P`, "volatilidade da carteira, em R$"], [String.raw`w`, "vetor de exposições de cada ativo, em R$ (negativo = vendido)"], [String.raw`w^\top`, "o mesmo vetor transposto (em linha)"], [String.raw`\Sigma`, "matriz de covariância dos retornos dos ativos"], [String.raw`\Sigma_{ij}`, "covariância entre os ativos i e j"], [String.raw`\rho_{ij}`, "correlação entre os retornos de i e j"], [String.raw`\sigma_i,\ \sigma_j`, "volatilidades dos ativos i e j"]]} />
       <p>Para dois ativos isso vira a conhecida fórmula:</p>
-      <Formula tex={String.raw`\text{VaR}_P = \sqrt{\text{VaR}_1^2 + \text{VaR}_2^2 + 2\rho\,\text{VaR}_1\text{VaR}_2}`} />
+      <Formula tex={String.raw`\text{VaR}_P = \sqrt{\text{VaR}_1^2 + \text{VaR}_2^2 + 2\rho\,\text{VaR}_1\text{VaR}_2}`} where={[[String.raw`\text{VaR}_P`, "VaR da carteira com os dois ativos"], [String.raw`\text{VaR}_1,\ \text{VaR}_2`, "VaR de cada ativo isoladamente"], [String.raw`\rho`, "correlação entre os retornos dos dois ativos"]]} />
       <p>
         Se <M>\rho = 1</M>, o VaR da carteira é a soma simples (nenhuma diversificação). Se <M>\rho = -1</M>,
         um ativo pode anular o outro (hedge perfeito).
@@ -62,7 +62,7 @@ export default function PortfolioPage() {
         Quanto do risco total vem de cada posição? Pela decomposição de Euler, o <strong>VaR
         componente</strong> é a exposição vezes o VaR marginal, e os componentes somam exatamente o VaR da carteira:
       </p>
-      <Formula tex={String.raw`\text{CVaR}_i = w_i \frac{\partial\, \text{VaR}_P}{\partial w_i} = z_\alpha \frac{w_i (\Sigma w)_i}{\sigma_P}, \qquad \sum_i \text{CVaR}_i = \text{VaR}_P`} />
+      <Formula tex={String.raw`\text{CVaR}_i = w_i \frac{\partial\, \text{VaR}_P}{\partial w_i} = z_\alpha \frac{w_i (\Sigma w)_i}{\sigma_P}, \qquad \sum_i \text{CVaR}_i = \text{VaR}_P`} where={[[String.raw`\text{CVaR}_i`, "VaR componente: a parcela do VaR da carteira atribuída ao ativo i (não confundir com o CVaR/ES)"], [String.raw`w_i`, "exposição ao ativo i, em R$"], [String.raw`\frac{\partial\, \text{VaR}_P}{\partial w_i}`, "VaR marginal: quanto o VaR da carteira muda por R$ 1 a mais no ativo i"], [String.raw`(\Sigma w)_i`, "i-ésimo elemento do produto da matriz de covariância pelas exposições"], [String.raw`z_\alpha`, "quantil da normal padrão no nível de confiança α"], [String.raw`\sigma_P`, "volatilidade da carteira, em R$"]]} />
       <p>Um componente <strong>negativo</strong> indica uma posição que funciona como hedge: aumentá-la reduz o risco total.</p>
 
       <h2>3. Laboratório</h2>

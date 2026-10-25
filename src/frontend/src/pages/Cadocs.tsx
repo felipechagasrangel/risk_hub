@@ -156,8 +156,8 @@ export default function Cadocs() {
         crédito não securitizado (CSR<sub>NSEC</sub>), securitizado (CSR<sub>SEC</sub>), carteira de correlação
         (CSR<sub>CTP</sub>), ações (EQ), mercadorias (COM) e moedas estrangeiras (FX). A fórmula é:
       </p>
-      <Formula tex={String.raw`\text{RWA}_{\text{SENS}} = \frac{1}{F}\Big[\max\big(R_{\text{alta}},\, R_{\text{média}},\, R_{\text{baixa}}\big) + R_{\text{RAO}}\Big], \qquad F = 8\%`} />
-      <Formula tex={String.raw`R_{\text{cenário}} = R_{\Delta} + R_{\text{Vega}} + R_{\text{Curvatura}}`} />
+      <Formula tex={String.raw`\text{RWA}_{\text{SENS}} = \frac{1}{F}\Big[\max\big(R_{\text{alta}},\, R_{\text{média}},\, R_{\text{baixa}}\big) + R_{\text{RAO}}\Big], \qquad F = 8\%`} where={[[String.raw`F`, "fator de conversão de capital em RWA (8%)"], [String.raw`R_{\text{alta}},\ R_{\text{média}},\ R_{\text{baixa}}`, "requerimento de capital total em cada cenário de correlação"], [String.raw`R_{\text{RAO}}`, "adicional para riscos residuais (RRAO)"]]} />
+      <Formula tex={String.raw`R_{\text{cenário}} = R_{\Delta} + R_{\text{Vega}} + R_{\text{Curvatura}}`} where={[[String.raw`R_{\Delta}`, "requerimento Delta: efeito linear dos choques"], [String.raw`R_{\text{Vega}}`, "requerimento Vega: efeito da volatilidade implícita"], [String.raw`R_{\text{Curvatura}}`, "requerimento de Curvatura: efeito não linear dos choques"]]} />
       <ul>
         <li><strong>Delta</strong>: efeito linear de choques nos fatores de risco (como a aproximação por duration da página de stress);</li>
         <li><strong>Vega</strong>: efeito de mudanças na volatilidade implícita em instrumentos não lineares (opções);</li>

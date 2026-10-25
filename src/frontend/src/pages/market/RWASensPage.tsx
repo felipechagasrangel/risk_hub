@@ -112,7 +112,7 @@ export default function RWASensPage() {
         instrumento a um vértice é a variação de valor quando apenas aquela taxa sobe 1 ponto-base,
         dividida por 0,0001:
       </p>
-      <Formula tex={String.raw`S_{i,m,t} = \frac{V_i(r_{m,t} + 0{,}0001,\; X_i) - V_i(r_{m,t},\; X_i)}{0{,}0001}`} />
+      <Formula tex={String.raw`S_{i,m,t} = \frac{V_i(r_{m,t} + 0{,}0001,\; X_i) - V_i(r_{m,t},\; X_i)}{0{,}0001}`} where={[[String.raw`S_{i,m,t}`, "sensibilidade do instrumento i ao vértice t da curva da moeda m"], [String.raw`V_i`, "valor do instrumento i"], [String.raw`r_{m,t}`, "taxa de juros livre de risco da moeda m no vértice t"], [String.raw`X_i`, "demais fatores de risco do instrumento, mantidos constantes"], [String.raw`0{,}0001`, "um ponto-base (1 bp)"]]} />
       <p>
         O numerador é o famoso <strong>DV01</strong> (ou PV01) do vértice. Somando os instrumentos, chega-se à
         <strong> sensibilidade consolidada</strong> <M>NS_k</M> de cada fator de risco. Um título prefixado
@@ -126,7 +126,7 @@ export default function RWASensPage() {
 
       <h2>2. Ponderação</h2>
       <p>Cada sensibilidade é multiplicada por um ponderador de risco, produto de dois fatores:</p>
-      <Formula tex={String.raw`WS_k = NS_k \times RW_k, \qquad RW_k = F_{\text{categoria}} \times F_{\text{vértice}}`} />
+      <Formula tex={String.raw`WS_k = NS_k \times RW_k, \qquad RW_k = F_{\text{categoria}} \times F_{\text{vértice}}`} where={[[String.raw`WS_k`, "sensibilidade ponderada do fator de risco k"], [String.raw`NS_k`, "sensibilidade consolidada: soma das sensibilidades de todos os instrumentos ao fator k"], [String.raw`RW_k`, "ponderador de risco do fator k"], [String.raw`F_{\text{categoria}}`, "fator da moeda: 0,7071 ou 1,0, conforme rating e moeda de liquidação"], [String.raw`F_{\text{vértice}}`, "fator do vértice, dos Anexos I (real) e I-A (demais moedas)"]]} />
       <div className="table-wrap">
         <table className="data">
           <thead>
@@ -152,7 +152,7 @@ export default function RWASensPage() {
 
       <h2>3. Agregação dentro da categoria</h2>
       <p>As sensibilidades ponderadas de uma mesma moeda são agregadas com correlações entre fatores:</p>
-      <Formula tex={String.raw`K_b = \sqrt{\max\Big(0,\; \sum_k WS_k^2 + \sum_k \sum_{\ell \neq k} \rho_{k\ell}\, WS_k\, WS_\ell\Big)}`} />
+      <Formula tex={String.raw`K_b = \sqrt{\max\Big(0,\; \sum_k WS_k^2 + \sum_k \sum_{\ell \neq k} \rho_{k\ell}\, WS_k\, WS_\ell\Big)}`} where={[[String.raw`K_b`, "posição em risco da categoria b (uma moeda)"], [String.raw`WS_k,\ WS_\ell`, "sensibilidades ponderadas dos fatores k e ℓ da categoria"], [String.raw`\rho_{k\ell}`, "correlação entre os fatores k e ℓ (Anexo VII; 99,9% entre curvas diferentes)"], [String.raw`\max(0, \cdot)`, "evita raiz de número negativo"]]} />
       <ul>
         <li><strong>Mesma curva, vértices diferentes</strong>: <M>\rho</M> do Anexo VII — próxima de 100% para vértices vizinhos e com piso de 40% para os distantes;</li>
         <li><strong>Mesmo vértice, curvas diferentes</strong>: 99,9%;</li>
@@ -165,18 +165,18 @@ export default function RWASensPage() {
 
       <h2>4. Agregação entre moedas</h2>
       <p>As categorias se combinam com correlação <M>\gamma = 50\%</M>, usando a soma simples <M>{String.raw`S_b = \sum_k WS_k`}</M>:</p>
-      <Formula tex={String.raw`\Delta_{\text{GIRR}} = \sqrt{\sum_b K_b^2 + \sum_b \sum_{c \neq b} \gamma_{bc}\, S_b\, S_c}`} />
+      <Formula tex={String.raw`\Delta_{\text{GIRR}} = \sqrt{\sum_b K_b^2 + \sum_b \sum_{c \neq b} \gamma_{bc}\, S_b\, S_c}`} where={[[String.raw`\Delta_{\text{GIRR}}`, "requerimento Delta da classe de juros livres de risco"], [String.raw`K_b`, "posição em risco da categoria (moeda) b"], [String.raw`S_b`, "soma simples das sensibilidades ponderadas da categoria b"], [String.raw`\gamma_{bc}`, "correlação entre as categorias b e c (50% para GIRR)"]]} />
       <p>Se o termo dentro da raiz ficar negativo, cada <M>S_b</M> é limitado ao intervalo <M>{String.raw`[-K_b,\, K_b]`}</M> e a conta é refeita.</p>
 
       <h2>5. Os três cenários de correlação</h2>
       <p>Todas as correlações (<M>\rho</M> e <M>\gamma</M>) são recalculadas em três cenários:</p>
-      <Formula tex={String.raw`\rho^{\text{alta}} = \min(1{,}25\,\rho;\; 1) \qquad \rho^{\text{baixa}} = \max(2\rho - 1;\; 0{,}75\,\rho)`} />
+      <Formula tex={String.raw`\rho^{\text{alta}} = \min(1{,}25\,\rho;\; 1) \qquad \rho^{\text{baixa}} = \max(2\rho - 1;\; 0{,}75\,\rho)`} where={[[String.raw`\rho`, "correlação do cenário médio, a definida na norma"], [String.raw`\rho^{\text{alta}}`, "correlação do cenário alto: 25% maior, limitada a 100%"], [String.raw`\rho^{\text{baixa}}`, "correlação do cenário baixo"]]} />
       <p>
         O requerimento é o <strong>maior</strong> dos três. A intuição: correlações estimadas em tempos normais
         são instáveis. Se a carteira tem posições na mesma direção, o pior caso é a correlação alta (nada se
         diversifica); se tem hedges entre vértices ou moedas, o pior caso é a correlação baixa (o hedge funciona menos).
       </p>
-      <Formula tex={String.raw`\text{RWA}_{\text{SENS}} = \frac{1}{8\%}\,\max\big(R_{\text{alta}}, R_{\text{média}}, R_{\text{baixa}}\big), \qquad R = \Delta + \text{Vega} + \text{Curvatura} \text{ (todas as classes)}`} />
+      <Formula tex={String.raw`\text{RWA}_{\text{SENS}} = \frac{1}{8\%}\,\max\big(R_{\text{alta}}, R_{\text{média}}, R_{\text{baixa}}\big), \qquad R = \Delta + \text{Vega} + \text{Curvatura} \text{ (todas as classes)}`} where={[[String.raw`\text{RWA}_{\text{SENS}}`, "ativos ponderados pelo risco de mercado por sensibilidades"], [String.raw`R_{\text{alta}},\ R_{\text{média}},\ R_{\text{baixa}}`, "requerimento de capital total em cada cenário de correlação"], [String.raw`\Delta,\ \text{Vega},\ \text{Curvatura}`, "componentes do requerimento, somados em todas as classes de risco"], [String.raw`8\%`, "fator F, que converte requerimento de capital em RWA"]]} />
       <p className="muted" style={{ fontSize: 14 }}>
         Na conta completa, o máximo é tomado depois de somar todas as classes e componentes em cada cenário.
         Aqui somamos, em cada cenário, Delta GIRR + Delta FX + Curvatura GIRR e depois tomamos o máximo.
@@ -188,7 +188,7 @@ export default function RWASensPage() {
         <strong> opção</strong> isso não vale — o valor é convexo (comprado em opção) ou côncavo (vendido). A
         Curvatura mede a <strong>perda além da reta</strong> num choque grande, para cima e para baixo:
       </p>
-      <Formula tex={String.raw`CVR_k^{+} = -\sum_i \Big[V_i\big(x_k^{+RW}\big) - V_i(x_k) - RW^{curv}\, s_{ik}\Big] \qquad CVR_k^{-} = -\sum_i \Big[V_i\big(x_k^{-RW}\big) - V_i(x_k) + RW^{curv}\, s_{ik}\Big]`} />
+      <Formula tex={String.raw`CVR_k^{+} = -\sum_i \Big[V_i\big(x_k^{+RW}\big) - V_i(x_k) - RW^{curv}\, s_{ik}\Big] \qquad CVR_k^{-} = -\sum_i \Big[V_i\big(x_k^{-RW}\big) - V_i(x_k) + RW^{curv}\, s_{ik}\Big]`} where={[[String.raw`CVR_k^{\pm}`, "perda incremental além do linear no choque para cima (+) ou para baixo (−) do fator k"], [String.raw`V_i(x_k)`, "valor do instrumento i no nível atual do fator"], [String.raw`V_i(x_k^{\pm RW})`, "valor do instrumento reprecificado com a curva deslocada em ±1,7%"], [String.raw`RW^{curv}`, "tamanho do choque da Curvatura: 1,7% para GIRR"], [String.raw`s_{ik}`, "sensibilidade Delta do instrumento i somada em todos os vértices da curva k"]]} />
       <ul>
         <li>Para GIRR, o fator de risco é a <strong>curva inteira</strong> de cada moeda, e o choque é <strong>paralelo de ±1,7%</strong> (art. 96) — menor que o ponderador Delta do real, que chega a 3,2%;</li>
         <li><M>{"s_{ik}"}</M> é a soma das sensibilidades Delta da opção a todos os vértices da curva (art. 90);</li>
@@ -196,7 +196,7 @@ export default function RWASensPage() {
         <li>Vendido em opção: perde mais que o linear para os dois lados — é aí que a Curvatura cobra capital.</li>
       </ul>
       <p>Na categoria (moeda), escolhe-se o pior lado; entre curvas da mesma moeda, <M>{String.raw`\rho = 99{,}8\%`}</M>; entre moedas, <M>{String.raw`\gamma = 25\%`}</M>:</p>
-      <Formula tex={String.raw`K_b = \max\big(K_b^{+},\, K_b^{-}\big), \qquad K_b^{\pm} = \sqrt{\max\Big(0,\; \sum_k \max(0, CVR_k^{\pm})^2 + \sum_k\sum_{\ell\neq k} \rho_{k\ell}\, CVR_k^{\pm}\, CVR_\ell^{\pm}\, \psi\Big)}`} />
+      <Formula tex={String.raw`K_b = \max\big(K_b^{+},\, K_b^{-}\big), \qquad K_b^{\pm} = \sqrt{\max\Big(0,\; \sum_k \max(0, CVR_k^{\pm})^2 + \sum_k\sum_{\ell\neq k} \rho_{k\ell}\, CVR_k^{\pm}\, CVR_\ell^{\pm}\, \psi\Big)}`} where={[[String.raw`K_b`, "posição em risco de Curvatura da categoria b: o pior entre os dois lados"], [String.raw`K_b^{\pm}`, "agregação dos CVR do lado + ou −"], [String.raw`CVR_k^{\pm}`, "perdas incrementais de cada fator (curva) k"], [String.raw`\rho_{k\ell}`, "correlação entre curvas da mesma moeda (99,8%)"], [String.raw`\psi`, "vale 0 quando os dois CVR são negativos e 1 nos demais casos"]]} />
       <p className="muted" style={{ fontSize: 14 }}>
         ψ vale zero quando os dois CVR são negativos (dois ganhos não se compensam com perdas de terceiros) e
         um nos demais casos. Os mesmos três cenários de correlação valem aqui — mas, com uma única curva em
@@ -214,13 +214,13 @@ export default function RWASensPage() {
         Na classe FX, cada <strong>par real × moeda estrangeira</strong> é um fator de risco e também uma categoria
         própria (arts. 15 e 28). A sensibilidade é a variação de valor para uma alta de 1% no câmbio, escalada para 100%:
       </p>
-      <Formula tex={String.raw`S_{i,k} = \frac{V_i(1{,}01 \cdot FX_k,\; X_i) - V_i(FX_k,\; X_i)}{0{,}01}`} />
+      <Formula tex={String.raw`S_{i,k} = \frac{V_i(1{,}01 \cdot FX_k,\; X_i) - V_i(FX_k,\; X_i)}{0{,}01}`} where={[[String.raw`S_{i,k}`, "sensibilidade do instrumento i ao par real × moeda k"], [String.raw`FX_k`, "taxa de câmbio do real contra a moeda k"], [String.raw`1{,}01 \cdot FX_k`, "câmbio 1% mais alto (real 1% mais fraco)"], [String.raw`0{,}01`, "escala a variação de 1% para uma variação de 100%"], [String.raw`X_i`, "demais fatores de risco, mantidos constantes"]]} />
       <p>
         Para um instrumento linear, isso é simplesmente a <strong>exposição líquida em reais</strong>: R$ 3 milhões
         comprados em dólar têm sensibilidade de R$ 3 milhões. O ponderador é <strong>único, de 15%</strong>, para todos
         os pares (art. 30, VI) — o BCB não adotou a redução de Basileia (15%/√2) para pares líquidos.
       </p>
-      <Formula tex={String.raw`WS_k = 15\% \times NS_k, \qquad K_k = |WS_k|, \qquad \Delta_{FX} = \sqrt{\sum_k K_k^2 + \sum_k \sum_{c\neq k} \gamma\, S_k\, S_c}, \quad \gamma = 60\%`} />
+      <Formula tex={String.raw`WS_k = 15\% \times NS_k, \qquad K_k = |WS_k|, \qquad \Delta_{FX} = \sqrt{\sum_k K_k^2 + \sum_k \sum_{c\neq k} \gamma\, S_k\, S_c}, \quad \gamma = 60\%`} where={[[String.raw`NS_k`, "sensibilidade consolidada ao par k; para posições lineares, a exposição líquida em R$"], [String.raw`WS_k`, "sensibilidade ponderada do par k"], [String.raw`K_k`, "posição em risco da categoria: cada par é uma categoria com um único fator"], [String.raw`S_k,\ S_c`, "sensibilidades ponderadas dos pares k e c (com sinal)"], [String.raw`\gamma`, "correlação entre pares de moedas"], [String.raw`\Delta_{FX}`, "requerimento Delta da classe de moedas"]]} />
       <p>
         Os Deltas das classes se <strong>somam</strong> em cada cenário (art. 51): não há diversificação entre juros
         e câmbio. Um título em dólar gera as duas coisas — sensibilidade à curva de juros em dólar (GIRR) e

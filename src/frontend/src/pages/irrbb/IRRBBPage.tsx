@@ -92,7 +92,7 @@ export default function IRRBBPage() {
             menos o dos passivos. ΔEVE é sua variação quando a curva é chocada. É uma visão de
             <strong> longo prazo</strong>: captura todo o descasamento até o último fluxo.
           </p>
-          <Formula tex={String.raw`\text{EVE} = \sum_{t} \frac{CF^{A}_t - CF^{L}_t}{e^{\,r(t)\,t}}, \quad \Delta\text{EVE} = \text{EVE}_{\text{choque}} - \text{EVE}_{\text{base}}`} />
+          <Formula tex={String.raw`\text{EVE} = \sum_{t} \frac{CF^{A}_t - CF^{L}_t}{e^{\,r(t)\,t}}, \quad \Delta\text{EVE} = \text{EVE}_{\text{choque}} - \text{EVE}_{\text{base}}`} where={[[String.raw`\text{EVE}`, "valor econômico do patrimônio: VP dos ativos menos VP dos passivos"], [String.raw`CF^{A}_t,\ CF^{L}_t`, "fluxos de caixa de ativos e de passivos na data t"], [String.raw`r(t)`, "taxa da curva (contínua) para o prazo t"], [String.raw`e^{\,r(t)\,t}`, "fator de capitalização contínua; dividir por ele traz o fluxo a valor presente"], [String.raw`\text{EVE}_{\text{choque}},\ \text{EVE}_{\text{base}}`, "EVE com a curva chocada e com a curva atual"]]} />
         </div>
         <div className="card" style={{ margin: 0 }}>
           <h3 style={{ marginTop: 0 }}>ΔNII — margem financeira</h3>
@@ -101,7 +101,7 @@ export default function IRRBBPage() {
             nos próximos <strong>12 meses</strong>, supondo balanço constante: o que vence é
             renovado à nova taxa.
           </p>
-          <Formula tex={String.raw`\Delta\text{NII} \approx \sum_{t_i < 1} \text{Gap}_i \cdot \Delta r(t_i) \cdot (1 - t_i)`} />
+          <Formula tex={String.raw`\Delta\text{NII} \approx \sum_{t_i < 1} \text{Gap}_i \cdot \Delta r(t_i) \cdot (1 - t_i)`} where={[[String.raw`\Delta\text{NII}`, "variação da margem financeira em 12 meses"], [String.raw`\text{Gap}_i`, "ativos menos passivos que reprecificam na faixa i"], [String.raw`t_i`, "prazo até o repricing, em anos (só entram os menores que 1 ano)"], [String.raw`\Delta r(t_i)`, "choque de juros no prazo t_i"], [String.raw`1 - t_i`, "fração dos 12 meses em que a nova taxa vale"]]} />
         </div>
       </div>
       <p>
@@ -109,7 +109,7 @@ export default function IRRBBPage() {
         prefixada longa ganha NII com alta de juros, mas pode perder EVE se tiver ativos longos.
         Uma aproximação útil para o ΔEVE é o <strong>gap de duration</strong>:
       </p>
-      <Formula tex={String.raw`\Delta \text{EVE} \approx -\left(D_A - \tfrac{L}{A} D_L\right) \cdot A \cdot \Delta r`} />
+      <Formula tex={String.raw`\Delta \text{EVE} \approx -\left(D_A - \tfrac{L}{A} D_L\right) \cdot A \cdot \Delta r`} where={[[String.raw`D_A,\ D_L`, "durations dos ativos e dos passivos, em anos"], [String.raw`A,\ L`, "valor presente dos ativos e dos passivos"], [String.raw`\Delta r`, "choque paralelo de juros, em decimal"]]} />
 
       <h2>3. Os seis cenários de Basileia</h2>
       <p>
@@ -117,8 +117,8 @@ export default function IRRBBPage() {
         moeda com três magnitudes: paralelo (<M>{String.raw`\bar R_p`}</M>), curto (<M>{String.raw`\bar R_s`}</M>) e
         longo (<M>{String.raw`\bar R_l`}</M>). Para o real: 400, 500 e 300 pontos-base; para o dólar: 200, 300 e 150.
       </p>
-      <Formula tex={String.raw`\Delta R_{\text{curto}}(t) = \pm \bar R_s\, e^{-t/4} \qquad \Delta R_{\text{longo}}(t) = \pm \bar R_l\,(1 - e^{-t/4})`} />
-      <Formula tex={String.raw`\text{Steepener} = -0{,}65\,|\Delta R_{\text{curto}}| + 0{,}9\,|\Delta R_{\text{longo}}| \qquad \text{Flattener} = 0{,}8\,|\Delta R_{\text{curto}}| - 0{,}6\,|\Delta R_{\text{longo}}|`} />
+      <Formula tex={String.raw`\Delta R_{\text{curto}}(t) = \pm \bar R_s\, e^{-t/4} \qquad \Delta R_{\text{longo}}(t) = \pm \bar R_l\,(1 - e^{-t/4})`} where={[[String.raw`\Delta R_{\text{curto}}(t)`, "choque curto: forte nos prazos curtos e que se dissipa com o prazo"], [String.raw`\Delta R_{\text{longo}}(t)`, "choque longo: nulo no curto e crescente com o prazo"], [String.raw`\bar R_s,\ \bar R_l`, "magnitudes dos choques curto e longo da moeda (BRL: 500 e 300 bps)"], [String.raw`t`, "prazo, em anos"], [String.raw`4`, "parâmetro de decaimento, em anos"]]} />
+      <Formula tex={String.raw`\text{Steepener} = -0{,}65\,|\Delta R_{\text{curto}}| + 0{,}9\,|\Delta R_{\text{longo}}| \qquad \text{Flattener} = 0{,}8\,|\Delta R_{\text{curto}}| - 0{,}6\,|\Delta R_{\text{longo}}|`} where={[[String.raw`|\Delta R_{\text{curto}}|,\ |\Delta R_{\text{longo}}|`, "tamanhos dos choques curto e longo em cada prazo"], [String.raw`\text{Steepener}`, "inclinação: taxas curtas caem e longas sobem"], [String.raw`\text{Flattener}`, "achatamento: taxas curtas sobem e longas caem"]]} />
       <p>
         O <strong>teste de outlier</strong> supervisório sinaliza o banco cuja pior queda de EVE nos seis
         cenários supera <strong>15% do Nível I</strong>.

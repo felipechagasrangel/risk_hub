@@ -44,7 +44,7 @@ export default function LCRPage() {
       </p>
 
       <h2>1. A fórmula</h2>
-      <Formula tex={String.raw`\text{LCR} = \frac{\text{Estoque de HQLA}}{\text{Saídas líquidas de caixa em 30 dias de estresse}} \ge 100\%`} />
+      <Formula tex={String.raw`\text{LCR} = \frac{\text{Estoque de HQLA}}{\text{Saídas líquidas de caixa em 30 dias de estresse}} \ge 100\%`} where={[[String.raw`\text{HQLA}`, "ativos líquidos de alta qualidade, após haircuts e limites"], [String.raw`\text{Saídas líquidas}`, "saídas de caixa ponderadas menos entradas ponderadas (limitadas) em 30 dias de estresse"]]} />
       <p>
         O numerador é o “colchão”; o denominador é quanto dinheiro sai num cenário de estresse
         padronizado, que combina um rebaixamento do banco com uma corrida parcial de depósitos.
@@ -76,7 +76,7 @@ export default function LCRPage() {
 
       <h2>3. O denominador: saídas e entradas</h2>
       <p>Cada passivo recebe uma <strong>taxa de saída (run-off)</strong> que reflete sua probabilidade de fugir:</p>
-      <Formula tex={String.raw`\text{Saídas líquidas} = \sum_i S_i \cdot r_i \;-\; \min\!\Big(\sum_j E_j \cdot e_j,\; 75\% \cdot \sum_i S_i \cdot r_i\Big)`} />
+      <Formula tex={String.raw`\text{Saídas líquidas} = \sum_i S_i \cdot r_i \;-\; \min\!\Big(\sum_j E_j \cdot e_j,\; 75\% \cdot \sum_i S_i \cdot r_i\Big)`} where={[[String.raw`S_i`, "saldo do passivo ou compromisso i"], [String.raw`r_i`, "taxa de saída (run-off) de i no estresse"], [String.raw`E_j`, "saldo do recebível j que vence em 30 dias"], [String.raw`e_j`, "taxa de entrada do recebível j"], [String.raw`75\%`, "limite das entradas: no máximo 75% das saídas"]]} />
       <p>
         Depósitos de varejo segurados são “pegajosos” (3–10%); funding de outros bancos foge
         integralmente (100%). As entradas são limitadas a 75% das saídas, de modo que o banco

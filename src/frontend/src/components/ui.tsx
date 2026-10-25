@@ -2,12 +2,29 @@ import katex from "katex";
 import "katex/dist/katex.min.css";
 import type { ReactNode } from "react";
 
-/** Fórmula em LaTeX renderizada com KaTeX. */
-export function Formula({ tex, inline = false }: { tex: string; inline?: boolean }) {
+/** Símbolo em LaTeX e o que ele significa, para a legenda abaixo de uma fórmula. */
+export type FormulaTerm = [symbol: string, meaning: string];
+
+/** Fórmula em LaTeX renderizada com KaTeX, com legenda opcional ("onde:") dos componentes. */
+export function Formula({ tex, inline = false, where }: { tex: string; inline?: boolean; where?: FormulaTerm[] }) {
   const html = katex.renderToString(tex, { displayMode: !inline, throwOnError: false });
-  return inline
-    ? <span dangerouslySetInnerHTML={{ __html: html }} />
-    : <div className="formula" dangerouslySetInnerHTML={{ __html: html }} />;
+  if (inline) return <span dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <div className="formula">
+      <div dangerouslySetInnerHTML={{ __html: html }} />
+      {where && where.length > 0 && (
+        <dl className="formula-legend">
+          <dt className="formula-legend-title">onde:</dt>
+          {where.map(([symbol, meaning]) => (
+            <div key={symbol} className="formula-legend-row">
+              <dt dangerouslySetInnerHTML={{ __html: katex.renderToString(symbol, { throwOnError: false }) }} />
+              <dd>{meaning}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
 }
 
 export const M = ({ children }: { children: string }) => <Formula tex={children} inline />;
