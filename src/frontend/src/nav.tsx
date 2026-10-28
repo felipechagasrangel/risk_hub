@@ -43,12 +43,23 @@ export const NAV: NavGroup[] = [
     { to: "/fundamentos/carteiras", label: "Negociação × bancária", el: <BooksPage /> },
     { to: "/fundamentos/instrumentos", label: "Catálogo de instrumentos", el: <InstrumentsPage /> },
   ] },
+  { group: "Risco de Capital", icon: "shield", tone: "var(--tone-capital)", items: [
+    { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },
+    { to: "/capital/irb", label: "Modelo IRB", el: <IRBPage /> },
+  ] },
+  { group: "Risco de Liquidez", icon: "drop", tone: "var(--tone-liquidity)", items: [
+    { to: "/liquidez/lcr", label: "LCR", el: <LCRPage /> },
+    { to: "/liquidez/nsfr", label: "NSFR", el: <NSFRPage /> },
+  ] },
   { group: "Risco de Mercado", icon: "chart", tone: "var(--tone-market)", items: [
     { to: "/mercado/sensibilidades", label: "Sensibilidades e fatores", el: <SensitivitiesPage /> },
     { to: "/mercado/var", label: "VaR e Expected Shortfall", el: <VaRPage /> },
     { to: "/mercado/carteira", label: "Diversificação", el: <PortfolioPage /> },
     { to: "/mercado/stress", label: "Stress testing", el: <StressPage /> },
     { to: "/mercado/rwa-sens", label: "RWA SENS: GIRR e FX", el: <RWASensPage /> },
+  ] },
+  { group: "IRRBB", icon: "wave", tone: "var(--tone-irrbb)", items: [
+    { to: "/irrbb", label: "ΔEVE e ΔNII", el: <IRRBBPage /> },
   ] },
   { group: "XVA", icon: "link", tone: "var(--tone-xva)", items: [
     { to: "/xva/monte-carlo", label: "Monte Carlo: GBM, HW e HJM", el: <MonteCarloPage /> },
@@ -58,17 +69,6 @@ export const NAV: NavGroup[] = [
     { to: "/xva/fva-mva", label: "FVA, MVA e XVA total", el: <FundingPage /> },
     { to: "/xva/cotacao", label: "Cotação com e sem CSA", el: <QuotePage /> },
     { to: "/xva/margem-grade", label: "Margem × discretização", el: <MarginGridPage /> },
-  ] },
-  { group: "Capital", icon: "shield", tone: "var(--tone-capital)", items: [
-    { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },
-    { to: "/capital/irb", label: "Modelo IRB", el: <IRBPage /> },
-  ] },
-  { group: "Liquidez", icon: "drop", tone: "var(--tone-liquidity)", items: [
-    { to: "/liquidez/lcr", label: "LCR", el: <LCRPage /> },
-    { to: "/liquidez/nsfr", label: "NSFR", el: <NSFRPage /> },
-  ] },
-  { group: "IRRBB", icon: "wave", tone: "var(--tone-irrbb)", items: [
-    { to: "/irrbb", label: "ΔEVE e ΔNII", el: <IRRBBPage /> },
   ] },
   { group: "Referência", icon: "book", tone: "var(--tone-ref)", items: [
     { to: "/cadocs", label: "CADOCs", el: <Cadocs /> },
