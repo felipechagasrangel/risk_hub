@@ -1,7 +1,7 @@
 export type Column<R> = {
   key: keyof R & string;
   label: string;
-  type: "text" | "number" | "percent" | "select";
+  type: "text" | "number" | "percent" | "select" | "check";
   options?: [string, string][];
   width?: number;
 };
@@ -28,7 +28,7 @@ export function EditableTable<R extends Record<string, unknown>>(
         <thead>
           <tr>
             {columns.map((c) => (
-              <th key={c.key} className={c.type === "text" ? "" : "num"} style={{ width: c.width }}>
+              <th key={c.key} className={c.type === "text" || c.type === "check" ? "" : "num"} style={{ width: c.width }}>
                 {c.label}{c.type === "percent" && " (%)"}
               </th>
             ))}
@@ -59,6 +59,9 @@ export function EditableTable<R extends Record<string, unknown>>(
 function cell<R>(c: Column<R>, value: unknown, set: (v: unknown) => void) {
   if (c.type === "text") {
     return <input value={String(value)} onChange={(e) => set(e.target.value)} />;
+  }
+  if (c.type === "check") {
+    return <input type="checkbox" checked={Boolean(value)} onChange={(e) => set(e.target.checked)} style={{ width: "auto" }} />;
   }
   if (c.type === "select") {
     return (

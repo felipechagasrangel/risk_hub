@@ -137,3 +137,44 @@ estrangeiras.
 - BCBS d368 (tabela 2): tetos de núcleo e prazo médio de depósitos sem vencimento por segmento
   (90%/5 anos, 70%/4,5 anos, 50%/4 anos), recepcionados pela Circular nº 3.876/2018.
 - Pré-pagamento em CPR/SMM com sensibilidade linear ao incentivo: simplificação didática.
+
+## Capital: risco operacional, adicionais, planejamento e grandes exposições — `src/backend/core/capital_mgmt.py`
+
+- Resolução BCB nº 356/2023 (em vigor desde 1º/1/2025): RWAOPAD = BIC × ILM / F; componentes ILDC, SC e FC
+  (arts. 5º a 8º); coeficientes de 12%, 15% e 18% com faixas de R$ 5 bi e R$ 150 bi (art. 4º); ILM para S1 e
+  S2 com LC = 6 × média anual de perdas de dez anos (arts. 10 e 11); ILM = 1 para S3 (opcional) e S4.
+- Resolução CMN nº 4.958/2021: mínimos de capital, Adicionais de Capital Principal e restrição à
+  distribuição de resultados. As faixas por quartil do ACP seguem o arcabouço de Basileia (RBC30).
+- Resolução CMN nº 4.557/2017: plano de capital, testes de estresse e ICAAP. A projeção do laboratório é
+  uma simplificação (ROE sobre o Capital Principal, perdas como % do RWA inicial).
+- Resolução CMN nº 4.677/2018 (com a redação da Res. CMN nº 5.077/2023): limite de 25% do Nível I por
+  cliente ou grupo, exposição concentrada a partir de 10% e limite agregado de 600%.
+
+## Concentração de funding, contingência e intradiária — `src/backend/core/liquidity_monitoring.py`
+
+- Resolução CMN nº 4.557/2017: plano de contingência de liquidez. Indicadores e limites do laboratório
+  são ilustrativos.
+- BCBS 248 (2013), *Monitoring tools for intraday liquidity management*: maior uso de liquidez
+  intradiária e cenários de estresse. O redesconto intradia segue as regras do BCB para a conta de reservas.
+
+## Indexadores, risco de base e ΔNII dinâmico — `src/backend/core/irrbb_indexers.py`
+
+- Lei nº 12.703/2012: regra da poupança (0,5% a.m. + TR com Selic acima de 8,5%; 70% da Selic + TR abaixo).
+- A TR é aproximada por 0,35 × (Selic − 8%), com piso zero; a metodologia oficial usa a TBF e um redutor.
+- CDI aproximado por Selic − 0,10 p.p.
+
+## ΔEVE regulatório — `src/backend/core/irrbb_regulatory.py`
+
+- Basel Framework SRP31: agregação só das perdas entre moedas (SRP31.129), piso pós-choque a critério do
+  supervisor e não maior que zero (SRP31.93), escolha sobre margens comerciais (SRP31.100).
+- O piso de −100 bps subindo 5 bps por ano e o peso de 50% nos ganhos são exemplos da EBA (EBA/GL/2018/02),
+  não regras brasileiras.
+
+## CSRBB — `src/backend/core/csrbb.py`
+
+- BCBS d368 e SRP31: o CSRBB deve ser monitorado e avaliado junto com o IRRBB. Os choques de spread por
+  rating do laboratório são ilustrativos.
+
+## IRRBB comportamental (resgate antecipado) — `src/backend/core/irrbb_behavioral.py`
+
+- Resgate antecipado de CDB sensível ao incentivo de taxa: simplificação didática da opcionalidade do passivo.

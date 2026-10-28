@@ -2,7 +2,7 @@ from math import exp, isclose
 
 import numpy as np
 
-from backend.core import capital, capital_structure, credit_loss, curves, irrbb_behavioral, liquidity_mgmt, saccr, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
+from backend.core import capital, capital_mgmt, capital_structure, credit_loss, csrbb, curves, irrbb_behavioral, irrbb_indexers, irrbb_regulatory, liquidity_mgmt, liquidity_monitoring, saccr, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
 
 
 def test_parametric_var_matches_textbook():
@@ -457,3 +457,116 @@ def test_nmd_caps_and_prepayment_shortens_duration():
     assert isclose(irrbb_behavioral.present_value(loan(0.0), 0.18), 1000, rel_tol=1e-6)
     assert irrbb_behavioral.macaulay_duration(loan(0.2), 0.14) < irrbb_behavioral.macaulay_duration(loan(0.0), 0.14)
     assert irrbb_behavioral.prepayment_rate(0.08, 0.03, 0.18, 0.12) > irrbb_behavioral.prepayment_rate(0.08, 0.03, 0.18, 0.18)
+
+
+def test_op_risk_bic_brackets_and_ilm():
+    assert isclose(capital_mgmt.bic(4_000)["bic"], 480)
+    assert isclose(capital_mgmt.bic(20_000)["bic"], 0.12 * 5_000 + 0.15 * 15_000)
+    assert isclose(capital_mgmt.ilm(1.0, 1.0), 1.0)          # perdas proporcionais ao BIC → ILM = 1
+    assert capital_mgmt.ilm(2.0, 1.0) > 1 > capital_mgmt.ilm(0.5, 1.0)
+    y = {"ii": 100, "ie": 60, "iea": 1_000, "di": 5, "fi": 30, "fe": 10, "ooi": 2, "ooe": 4, "ntb": -8, "nbb": 3}
+    bi = capital_mgmt.business_indicator([y, y, y])
+    assert isclose(bi["ildc"], min(40, 22.5) + 5) and isclose(bi["sc"], 30 + 4) and isclose(bi["fc"], 11)
+    r = capital_mgmt.op_risk({"years": [y] * 3, "losses": [10] * 10, "segment": "S4"})
+    assert r["ilm"] == 1.0 and isclose(r["rwa"], r["bic"] / 0.08)
+
+
+def test_distribution_limit_quartiles():
+    acp = 0.035
+    lim = lambda cet1: capital_mgmt.distribution_limit(cet1 * 100, 1.5, 2.0, 100, acp)["max_payout"]
+    assert lim(0.045 + 0.2 * acp) == 0.0
+    assert lim(0.045 + 0.3 * acp) == 0.2
+    assert lim(0.045 + 0.9 * acp) == 0.6
+    assert lim(0.045 + 1.1 * acp) == 1.0
+    # Sem Capital Complementar, o Capital Principal cobre os 1,5 p.p. e sobra menos para o adicional
+    assert capital_mgmt.distribution_limit(9.0, 0.0, 2.0, 100, acp)["available"] < capital_mgmt.distribution_limit(9.0, 1.5, 2.0, 100, acp)["available"]
+
+
+def test_capital_plan_restricts_payout_under_stress():
+    p = {"cet1": 900, "at1": 150, "tier2": 200, "rwa": 10_000, "countercyclical": 0.0, "systemic": 0.0,
+         "management_buffer": 0.01, "payout": 0.5}
+    path = capital_mgmt.project_capital(p, {"roe": 0.15, "rwa_growth": 0.0, "losses": [0.0]}, quarters=4)
+    assert path[-1]["cet1"] > 900 and all(r["max_payout"] == 1.0 for r in path)
+    stressed = capital_mgmt.project_capital({**p, "cet1": 500}, {"roe": 0.15, "rwa_growth": 0.0, "losses": [0.0]}, quarters=2)
+    assert stressed[1]["max_payout"] < 1.0
+
+
+def test_large_exposures_group_aggregation():
+    r = capital_mgmt.large_exposures([
+        {"name": "A1", "group": "A", "gross": 150, "mitigation": 0, "exempt": False},
+        {"name": "A2", "group": "A", "gross": 150, "mitigation": 40, "exempt": False},
+        {"name": "Tesouro", "group": "", "gross": 5_000, "mitigation": 0, "exempt": True},
+        {"name": "B", "group": "", "gross": 50, "mitigation": 0, "exempt": False},
+    ], tier1=1_000)
+    g = {x["group"]: x for x in r["groups"]}
+    assert isclose(g["A"]["net"], 260) and g["A"]["status"] == "acima do limite"
+    assert g["Tesouro"]["status"] == "isenta" and g["B"]["status"] == "ok"
+    assert isclose(r["concentrated_total"], 260)
+
+
+def test_funding_concentration_and_ewi():
+    c = liquidity_monitoring.concentration(
+        [{"name": "a", "product": "CDB", "amount": 60, "days": 10}, {"name": "b", "product": "LF", "amount": 40, "days": 400}], buffer=50)
+    assert isclose(c["hhi_counterparty"], 0.36 + 0.16) and isclose(c["short_term_share"], 0.6)
+    assert isclose(c["loss_of_top"][0]["coverage"], 50 / 60)
+    assert liquidity_monitoring.ewi_status(1.1, 1.2, 1.0, False) == "amarela"
+    assert liquidity_monitoring.ewi_status(0.9, 1.2, 1.0, False) == "vermelha"
+    assert liquidity_monitoring.ewi_status(0.2, 0.3, 0.5, True) == "verde"
+
+
+def test_intraday_delay_increases_usage():
+    n = len(liquidity_monitoring.SLOTS)
+    inflow = [0.0] * n; inflow[2] = 100
+    outflow = [0.0] * n; outflow[3] = 100
+    flows = [{"name": "in", "kind": "in", "amounts": inflow, "time_critical": True},
+             {"name": "out", "kind": "out", "amounts": outflow, "time_critical": False}]
+    base = liquidity_monitoring.intraday_path(flows, 0)
+    late = liquidity_monitoring.intraday_path(flows, 0, delay_slots=2)
+    assert base["max_usage"] == 0 and isclose(late["max_usage"], 100)
+    queued = liquidity_monitoring.intraday_path(flows, 0, delay_slots=2, queue_noncritical=True)
+    assert queued["max_usage"] == 0
+
+
+def test_poupanca_rule_and_selic_path():
+    assert isclose(irrbb_indexers.poupanca(0.06), 0.7 * 0.06)
+    assert isclose(irrbb_indexers.poupanca(0.14), 1.005 ** 12 - 1 + irrbb_indexers.tr(0.14))
+    path = irrbb_indexers.selic_path(0.14, 0.03, 6, 12)
+    assert isclose(path[-1], 0.17) and path[0] < 0.17
+
+
+def test_nii_projection_floating_vs_fixed():
+    items = [{"name": "pós", "side": "asset", "amount": 100, "indexer": "cdi", "pct": 1.0, "spread": 0.0, "rate": 0, "months": 12, "growth": 0},
+             {"name": "pré", "side": "liability", "amount": 100, "indexer": "pre", "pct": 1.0, "spread": 0.0, "rate": 0.139, "months": 360, "growth": 0}]
+    flat = irrbb_indexers.project_nii(items, 0.14, np.full(12, 0.14), np.full(12, 0.04), False)
+    up = irrbb_indexers.project_nii(items, 0.14, np.full(12, 0.15), np.full(12, 0.04), False)
+    assert isclose(flat["total"].sum(), 0.0, abs_tol=1e-9)
+    assert up["total"].sum() > 0.9  # ativo pós ganha ~1 p.p.; o passivo prefixado de prazo longo quase não reprecifica
+
+
+def test_regulatory_eve_aggregation_and_floor():
+    assert irrbb_regulatory.post_shock_rate(0.01, -0.02, 0.0, "zero") == 0.0
+    assert irrbb_regulatory.post_shock_rate(-0.005, -0.02, 0.0, "zero") == -0.005   # base abaixo do piso
+    assert isclose(irrbb_regulatory.post_shock_rate(0.01, -0.03, 10.0, "eba"), -0.005)
+    ccy = lambda code: {"code": code, "fx": 1.0, "curve": [{"tenor": 1, "rate": 0.05}, {"tenor": 10, "rate": 0.05}],
+                        "shocks": {"parallel": 0.02, "short": 0.02, "long": 0.02}}
+    pos = [{"name": "a", "currency": "X", "side": "asset", "amount": 100, "rate": 0.05, "margin": 0.0, "repricing": 5},
+           {"name": "b", "currency": "Y", "side": "liability", "amount": 100, "rate": 0.05, "margin": 0.0, "repricing": 5}]
+    r = irrbb_regulatory.analyze({"tier1": 100, "floor": "none", "margins": "include_rf", "currencies": [ccy("X"), ccy("Y")], "positions": pos})
+    up = next(x for x in r["scenarios"] if x["scenario"] == "parallel_up")
+    assert isclose(up["net"], 0.0, abs_tol=1e-9) and up["basel"] > 0  # ganho em Y não compensa perda em X
+
+
+def test_csrbb_spread_and_swap():
+    assert isclose(csrbb.bond_price(0.1, 5, 0.1), 1.0)
+    p = {"risk_free": 0.1, "severity": 1.0, "rate_shock_bps": 100, "tier1": 100, "spread_shocks": {"AA": 100},
+         "bonds": [{"name": "x", "rating": "AA", "notional": 100, "coupon": 0.11, "maturity": 5, "spread": 0.01,
+                    "accounting": "vjora", "swapped": True}]}
+    r = csrbb.run(p)["bonds"][0]
+    assert r["dv_spread"] < 0 and isclose(r["dv_spread"], r["dv_rate"])       # mesmo choque, mesmo efeito
+    assert isclose(r["dv_hedged"], r["dv_both"] - r["dv_rate"])                # swap tira só a parte de juros
+
+
+def test_cdb_redemption_rises_with_rates():
+    assert irrbb_behavioral.redemption_rate(0.05, 0.08, 0.145, 0.17) > irrbb_behavioral.redemption_rate(0.05, 0.08, 0.145, 0.14)
+    flows = irrbb_behavioral.cdb_cash_flows(100, 0.12, 24, 0.0)
+    assert isclose(flows.sum(), 100 * 1.12 ** 2)

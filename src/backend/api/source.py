@@ -2,7 +2,8 @@ import inspect
 
 from fastapi import APIRouter, HTTPException
 
-from backend.core import capital_structure, credit_loss, curves, irrbb_behavioral, liquidity_mgmt, saccr, sensitivities, xva
+from backend.core import (capital_mgmt, capital_structure, credit_loss, csrbb, curves, irrbb_behavioral, irrbb_indexers,
+                          irrbb_regulatory, liquidity_mgmt, liquidity_monitoring, saccr, sensitivities, xva)
 
 router = APIRouter(prefix="/source", tags=["Código-fonte"])
 
@@ -21,6 +22,12 @@ SNIPPETS = {f.__name__: f for f in (
     capital_structure.cet1_build, capital_structure.leverage_exposure,
     liquidity_mgmt.liquidity_gap, liquidity_mgmt.survival_horizon, liquidity_mgmt.ftp,
     irrbb_behavioral.nmd_cash_flows, irrbb_behavioral.prepayment_rate, irrbb_behavioral.loan_cash_flows,
+    irrbb_behavioral.redemption_rate, irrbb_behavioral.cdb_cash_flows,
+    capital_mgmt.business_indicator, capital_mgmt.bic, capital_mgmt.ilm, capital_mgmt.distribution_limit,
+    capital_mgmt.project_capital, capital_mgmt.large_exposures,
+    liquidity_monitoring.concentration, liquidity_monitoring.ewi_status, liquidity_monitoring.intraday_path,
+    irrbb_indexers.poupanca, irrbb_indexers.tr, irrbb_indexers.selic_path, irrbb_indexers.project_nii,
+    irrbb_regulatory.post_shock_rate, irrbb_regulatory.currency_eve, csrbb.bond_price, csrbb.spread_duration,
     curves.di1_pu, curves.flat_forward, curves.forward_rate, curves.implied_cupom, curves.cupom_curve,
 )}
 

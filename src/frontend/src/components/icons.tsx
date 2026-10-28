@@ -11,6 +11,7 @@ const PATHS = {
   close: "M6 6l12 12M18 6 6 18",
   arrowLeft: "M19 12H5M11 6l-6 6 6 6",
   arrowRight: "M5 12h14M13 6l6 6-6 6",
+  chevron: "M9 6l6 6-6 6",
   layers: "M12 3 3 8l9 5 9-5-9-5ZM3 13l9 5 9-5",
   chart: "M4 20V10M10 20V4M16 20v-7M22 20H2",
   shield: "M12 3 5 6v6c0 4.4 3 7.6 7 9 4-1.4 7-4.6 7-9V6z",

@@ -139,3 +139,27 @@ def test_management_endpoints():
     assert r.status_code == 200 and r.json()["survival_stress"] is None
     b = client.post("/api/irrbb/behavioral", json={})
     assert b.status_code == 200 and len(b.json()["profile"]) == 13
+
+
+def test_capital_liquidity_irrbb_topic_endpoints():
+    y = {"ii": 100, "ie": 60, "iea": 1000}
+    assert client.post("/api/capital/op-risk", json={"years": [y] * 3, "losses": [5] * 10}).status_code == 200
+    assert client.post("/api/capital/buffers", json={}).status_code == 200
+    assert client.post("/api/capital/plan", json={}).status_code == 200
+    assert client.post("/api/capital/large-exposures", json={"tier1": 100, "exposures": [{"name": "a", "gross": 30}]}).status_code == 200
+    f = client.post("/api/liquidity/funding", json={"buffer": 10, "sources": [{"name": "a", "product": "CDB", "amount": 5, "days": 3}],
+                                                     "indicators": [{"name": "top", "metric": "top10_share", "amber": 0.5, "red": 0.9}]})
+    assert f.status_code == 200 and f.json()["contingency"]["level"] == "contingência"
+    bad = client.post("/api/liquidity/intraday", json={"opening": 1, "flows": [{"name": "x", "kind": "in", "amounts": [1, 2]}]})
+    assert bad.status_code == 422
+    item = {"name": "x", "side": "asset", "amount": 10, "indexer": "cdi"}
+    assert client.post("/api/irrbb/basis", json={"items": [item]}).status_code == 200
+    d = client.post("/api/irrbb/dynamic-nii", json={"items": [item], "scenarios": [
+        {"name": "b", "delta_bps": 0, "ramp_months": 1}, {"name": "u", "delta_bps": 100, "ramp_months": 3}]})
+    assert d.status_code == 200 and len(d.json()["scenarios"][0]["constant"]) == 24
+    reg = {"tier1": 10, "currencies": [{"code": "BRL", "fx": 1, "curve": [{"tenor": 1, "rate": 0.1}, {"tenor": 5, "rate": 0.1}],
+                                        "shocks": {"parallel": 0.04, "short": 0.05, "long": 0.03}}],
+           "positions": [{"name": "a", "currency": "BRL", "side": "asset", "amount": 10, "rate": 0.1, "repricing": 3}]}
+    assert client.post("/api/irrbb/regulatory", json=reg).status_code == 200
+    bond = {"name": "b", "rating": "A", "notional": 10, "coupon": 0.15, "maturity": 3, "spread": 0.02}
+    assert client.post("/api/irrbb/csrbb", json={"bonds": [bond]}).status_code == 200

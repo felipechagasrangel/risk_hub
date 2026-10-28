@@ -97,6 +97,8 @@ class BehavioralRequest(BaseModel):
     cdb_balance: float = Field(300, ge=0)
     cdb_rate: float = Field(0.145, gt=-0.05, lt=1)
     cdb_months: int = Field(24, ge=1, le=120)
+    cdb_redemption_base: float = Field(0.05, ge=0, le=0.9, description="Resgate antecipado anual estrutural do CDB")
+    cdb_redemption_sensitivity: float = Field(0.08, ge=0, le=0.5, description="Aumento do resgate por ponto de incentivo")
 
 
 @router.post("/irrbb/behavioral")

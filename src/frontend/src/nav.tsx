@@ -7,6 +7,16 @@ import StressPage from "./pages/market/StressPage";
 import RWAPage from "./pages/capital/RWAPage";
 import IRBPage from "./pages/capital/IRBPage";
 import CapitalStructurePage from "./pages/capital/CapitalStructurePage";
+import OpRiskPage from "./pages/capital/OpRiskPage";
+import BuffersPage from "./pages/capital/BuffersPage";
+import CapitalPlanPage from "./pages/capital/CapitalPlanPage";
+import LargeExposuresPage from "./pages/capital/LargeExposuresPage";
+import FundingConcentrationPage from "./pages/liquidity/FundingPage";
+import IntradayPage from "./pages/liquidity/IntradayPage";
+import RegulatoryEVEPage from "./pages/irrbb/RegulatoryEVEPage";
+import BasisRiskPage from "./pages/irrbb/BasisRiskPage";
+import DynamicNIIPage from "./pages/irrbb/DynamicNIIPage";
+import CSRBBPage from "./pages/irrbb/CSRBBPage";
 import LiquidityGapPage from "./pages/liquidity/LiquidityGapPage";
 import BehavioralPage from "./pages/irrbb/BehavioralPage";
 import RWASensPage from "./pages/market/RWASensPage";
@@ -52,6 +62,10 @@ export const NAV: NavGroup[] = [
     { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },
     { to: "/capital/irb", label: "Modelo IRB", el: <IRBPage /> },
     { to: "/capital/pr-alavancagem", label: "Composição do PR e alavancagem", el: <CapitalStructurePage /> },
+    { to: "/capital/risco-operacional", label: "Risco operacional", el: <OpRiskPage /> },
+    { to: "/capital/buffers", label: "Adicionais de capital (buffers)", el: <BuffersPage /> },
+    { to: "/capital/planejamento", label: "Planejamento de capital e ICAAP", el: <CapitalPlanPage /> },
+    { to: "/capital/grandes-exposicoes", label: "Grandes exposições", el: <LargeExposuresPage /> },
   ] },
   { group: "Risco de Crédito", icon: "coins", tone: "var(--tone-credit)", items: [
     { to: "/credito/perda-esperada", label: "Perda esperada (Res. 4.966)", el: <ExpectedLossPage /> },
@@ -61,6 +75,8 @@ export const NAV: NavGroup[] = [
     { to: "/liquidez/lcr", label: "LCR", el: <LCRPage /> },
     { to: "/liquidez/nsfr", label: "NSFR", el: <NSFRPage /> },
     { to: "/liquidez/gap-ftp", label: "Gap de liquidez e FTP", el: <LiquidityGapPage /> },
+    { to: "/liquidez/concentracao", label: "Concentração e contingência", el: <FundingConcentrationPage /> },
+    { to: "/liquidez/intradiaria", label: "Liquidez intradiária", el: <IntradayPage /> },
   ] },
   { group: "Risco de Mercado", icon: "chart", tone: "var(--tone-market)", items: [
     { to: "/mercado/sensibilidades", label: "Sensibilidades e fatores", el: <SensitivitiesPage /> },
@@ -71,7 +87,11 @@ export const NAV: NavGroup[] = [
   ] },
   { group: "IRRBB", icon: "wave", tone: "var(--tone-irrbb)", items: [
     { to: "/irrbb", label: "ΔEVE e ΔNII", el: <IRRBBPage /> },
-    { to: "/irrbb/comportamental", label: "Modelagem comportamental", el: <BehavioralPage /> },
+    { to: "/irrbb/eve-regulatorio", label: "ΔEVE regulatório: moedas, piso e margens", el: <RegulatoryEVEPage /> },
+    { to: "/irrbb/comportamental", label: "Modelagem comportamental e opcionalidade", el: <BehavioralPage /> },
+    { to: "/irrbb/risco-de-base", label: "Risco de base e indexadores", el: <BasisRiskPage /> },
+    { to: "/irrbb/nii-dinamico", label: "ΔNII com balanço dinâmico", el: <DynamicNIIPage /> },
+    { to: "/irrbb/csrbb", label: "CSRBB: spread de crédito", el: <CSRBBPage /> },
   ] },
   { group: "XVA", icon: "link", tone: "var(--tone-xva)", items: [
     { to: "/xva/monte-carlo", label: "Monte Carlo: GBM, HW e HJM", el: <MonteCarloPage /> },

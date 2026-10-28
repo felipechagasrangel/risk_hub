@@ -7,6 +7,8 @@ por anos; um crédito de 5 anos pode ser quitado antes, e mais ainda quando os j
   no tempo com prazo médio limitado por segmento; a parte volátil vence no dia seguinte.
 - Pré-pagamento: taxa anual constante (CPR) ou crescente quando a taxa de mercado cai abaixo da
   taxa do contrato (incentivo de refinanciamento), o que cria convexidade negativa.
+- Resgate antecipado de CDB com liquidez diária: a opção do lado do passivo. Quando os juros
+  sobem acima da taxa do CDB, o cliente resgata para reaplicar mais caro.
 
 Fluxos mensais; desconto pela curva pré flat (base 252) com choque paralelo.
 """
@@ -65,6 +67,25 @@ def loan_cash_flows(balance: float, annual_rate: float, months: int, cpr: float)
     return flows
 
 
+def redemption_rate(base: float, sensitivity: float, deposit_rate: float, market_rate: float) -> float:
+    """Taxa anual de resgate antecipado: sobe quando o mercado paga mais que o CDB."""
+    incentive = max(market_rate - deposit_rate, 0.0) * 100
+    return float(np.clip(base + sensitivity * incentive, 0.0, 0.9))
+
+
+def cdb_cash_flows(balance: float, annual_rate: float, months: int, redemption: float) -> np.ndarray:
+    """CDB que capitaliza até o vencimento; a cada mês uma fração resgata pelo valor corrigido."""
+    i = (1 + annual_rate) ** (1 / 12) - 1
+    m = smm(redemption)
+    flows, b = np.zeros(months), balance
+    for k in range(months):
+        b *= 1 + i
+        out = b if k == months - 1 else b * m
+        flows[k] = out
+        b -= out
+    return flows
+
+
 def bullet_cash_flows(balance: float, annual_rate: float, months: int) -> np.ndarray:
     flows = np.zeros(months)
     flows[-1] = balance * (1 + annual_rate) ** (months / 12)
@@ -99,13 +120,19 @@ def balance_sheet_eve(p: dict, shock: float, assumption: str) -> dict:
     else:
         deposits, _ = nmd_cash_flows(p["nmd_balance"], p["nmd_segment"], p["stable_share"],
                                      p["core_share"], p["nmd_avg_maturity"])
-    cdb =bullet_cash_flows(p["cdb_balance"], p["cdb_rate"], p["cdb_months"])
+    if assumption == "contratual":
+        red = 0.0
+    elif assumption == "estática":
+        red = p["cdb_redemption_base"]
+    else:
+        red = redemption_rate(p["cdb_redemption_base"], p["cdb_redemption_sensitivity"], p["cdb_rate"], market)
+    cdb = cdb_cash_flows(p["cdb_balance"], p["cdb_rate"], p["cdb_months"], red)
 
     pv_loans = present_value(loans, market)
     pv_deposits = present_value(deposits, market)
     pv_cdb = present_value(cdb, market)
     return {"pv_loans": pv_loans, "pv_deposits": pv_deposits, "pv_cdb": pv_cdb,
-            "eve": pv_loans - pv_deposits - pv_cdb, "cpr": cpr}
+            "eve": pv_loans - pv_deposits - pv_cdb, "cpr": cpr, "redemption": red}
 
 
 def run(p: dict) -> dict:
@@ -119,6 +146,7 @@ def run(p: dict) -> dict:
             r = balance_sheet_eve(p, s, a)
             row[f"delta_{a}"] = r["eve"] - base[a]["eve"]
             row[f"loans_{a}"] = r["pv_loans"]
+            row[f"cdb_{a}"] = r["pv_cdb"]
         profile.append(row)
 
     deposits, nmd_info = nmd_cash_flows(p["nmd_balance"], p["nmd_segment"], p["stable_share"],

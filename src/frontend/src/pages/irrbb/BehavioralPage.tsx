@@ -17,9 +17,9 @@ type Resp = {
 };
 
 const ASSUMPTIONS: { key: Assumption; label: string; color: string }[] = [
-  { key: "contratual", label: "Contratual (sem pré-pagamento, depósito vence amanhã)", color: "var(--series-1)" },
-  { key: "estática", label: "Comportamental, pré-pagamento constante", color: "var(--series-2)" },
-  { key: "dinâmica", label: "Comportamental, pré-pagamento sensível aos juros", color: "var(--series-3)" },
+  { key: "contratual", label: "Contratual (sem pré-pagamento nem resgate, depósito vence amanhã)", color: "var(--series-1)" },
+  { key: "estática", label: "Comportamental, pré-pagamento e resgate constantes", color: "var(--series-2)" },
+  { key: "dinâmica", label: "Comportamental, pré-pagamento e resgate sensíveis aos juros", color: "var(--series-3)" },
 ];
 const SEGMENT_LABEL: Record<Segment, string> = {
   retail_transactional: "Varejo transacional", retail_non_transactional: "Varejo não transacional", wholesale: "Atacado",
@@ -68,13 +68,28 @@ export default function BehavioralPage() {
       <CodeSnippet name="prepayment_rate" />
       <CodeSnippet name="loan_cash_flows" caption="crédito Price com pré-pagamento" />
 
-      <h2>3. Laboratório</h2>
+      <h2>3. Resgate antecipado: a opção do lado do passivo</h2>
+      <p>
+        Um CDB com liquidez diária é um depósito a prazo com uma opção de venda para o cliente: ele pode resgatar a qualquer
+        momento pelo valor corrigido. Quando os juros sobem acima da taxa do CDB, resgatar e reaplicar mais caro passa a
+        valer a pena — justamente quando o banco gostaria de manter o funding barato.
+      </p>
+      <Formula tex={String.raw`\text{resgate}(r) = \rho_0 + \gamma\cdot\max(r - K_{\text{CDB}},\ 0)`} where={[[String.raw`\rho_0`, "resgate anual estrutural (necessidade de caixa do cliente)"], [String.raw`K_{\text{CDB}}`, "taxa do CDB"], [String.raw`r`, "taxa de mercado"], [String.raw`\gamma`, "sensibilidade: pontos de resgate por ponto de incentivo"]]} />
+      <p>
+        As duas opções vão contra o banco: o crédito encurta quando os juros caem e o passivo encurta quando sobem. É a
+        opcionalidade que o BCBS pede para capturar com choques aplicados também às premissas comportamentais.
+      </p>
+      <CodeSnippet name="redemption_rate" />
+      <CodeSnippet name="cdb_cash_flows" caption="CDB com resgate antecipado" />
+
+      <h2>4. Laboratório</h2>
       <BehavioralLab />
       <Callout title="O que observar">
         <ul>
           <li>Tratar o depósito como “vence amanhã” superestima o descasamento: o banco parece muito mais exposto a alta de juros do que é.</li>
           <li>Com o núcleo modelado, o depósito vira um passivo de prazo médio parecido com o do crédito, e o ΔEVE encolhe.</li>
           <li>Com pré-pagamento sensível aos juros, a curva de ΔEVE fica negativa nos dois lados: é a opção vendida ao cliente.</li>
+          <li>Aumente a sensibilidade do resgate do CDB: a perda com alta de juros cresce, porque o passivo barato vai embora quando mais se precisa dele.</li>
           <li>Troque o segmento para atacado: o teto de 50% como núcleo encurta o depósito e o ΔEVE volta a crescer.</li>
           <li>Essas premissas são as mais discutidas com o supervisor — pequenas mudanças no prazo do núcleo mudam muito o ΔEVE e o teste de outlier.</li>
         </ul>
@@ -87,7 +102,7 @@ function BehavioralLab() {
   const [p, setP] = useState({
     market_rate: 0.14, loan_balance: 1000, loan_rate: 0.18, loan_months: 60, base_cpr: 0.08, cpr_sensitivity: 0.03,
     nmd_balance: 600, nmd_segment: "retail_transactional" as Segment, stable_share: 0.8, core_share: 1.0, nmd_avg_maturity: 3,
-    cdb_balance: 300, cdb_rate: 0.145, cdb_months: 24,
+    cdb_balance: 300, cdb_rate: 0.145, cdb_months: 24, cdb_redemption_base: 0.05, cdb_redemption_sensitivity: 0.08,
   });
   const set = <K extends keyof typeof p>(k: K) => (v: (typeof p)[K]) => setP({ ...p, [k]: v });
   const { data, error } = useCompute<Resp>("/irrbb/behavioral", p, 250);
@@ -119,6 +134,8 @@ function BehavioralLab() {
         <NumField label="CDB prefixado (saldo)" value={p.cdb_balance} onChange={set("cdb_balance")} step={50} />
         <NumField label="Taxa do CDB" percent value={p.cdb_rate} onChange={set("cdb_rate")} step={0.25} />
         <NumField label="Prazo do CDB (meses)" value={p.cdb_months} onChange={set("cdb_months")} step={6} min={1} />
+        <NumField label="Resgate antecipado estrutural" percent value={p.cdb_redemption_base} onChange={set("cdb_redemption_base")} step={1} />
+        <NumField label="Sensibilidade do resgate (γ)" value={p.cdb_redemption_sensitivity} onChange={set("cdb_redemption_sensitivity")} step={0.01} hint="por ponto de incentivo" />
         <NumField label="Taxa de mercado" percent value={p.market_rate} onChange={set("market_rate")} step={0.25} />
       </div>
       {error && <p className="error">{error}</p>}

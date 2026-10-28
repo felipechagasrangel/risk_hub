@@ -10,6 +10,10 @@ const PAGES = NAV.flatMap((g) => g.items.map((i) => ({ ...i, group: g })));
 export default function App() {
   const { pathname, hash } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const current = NAV.find((g) => g.items.some((i) => i.to === pathname))?.group ?? null;
+  // Só a seção da página atual fica aberta; clicar no título de outra seção a abre e fecha as demais.
+  const [openGroup, setOpenGroup] = useState<string | null>(current);
+  useEffect(() => setOpenGroup(current), [current]);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -34,12 +38,19 @@ export default function App() {
         <div className="sidebar-brand"><Brand /></div>
         <div className="nav-scroll">
           <NavLink to="/" end className="nav-link">Início</NavLink>
-          {NAV.map((g) => (
-            <div key={g.group} className="nav-group" style={{ ["--tone" as string]: g.tone }}>
-              <div className="group"><Icon name={g.icon} size={14} />{g.group}</div>
-              {g.items.map((i) => <NavLink key={i.to} to={i.to} className="nav-link">{i.label}</NavLink>)}
-            </div>
-          ))}
+          {NAV.map((g) => {
+            const open = openGroup === g.group;
+            return (
+              <div key={g.group} className={`nav-group${open ? " open" : ""}${current === g.group ? " current" : ""}`} style={{ ["--tone" as string]: g.tone }}>
+                <button className="group" aria-expanded={open} onClick={() => setOpenGroup(open ? null : g.group)}>
+                  <Icon name={g.icon} size={14} /><span>{g.group}</span>
+                  <span className="group-count">{g.items.length}</span>
+                  <span className="chevron"><Icon name="chevron" size={13} /></span>
+                </button>
+                {open && <div className="nav-items">{g.items.map((i) => <NavLink key={i.to} to={i.to} end className="nav-link">{i.label}</NavLink>)}</div>}
+              </div>
+            );
+          })}
         </div>
         <div className="sidebar-footer"><ThemeToggle /></div>
       </nav>
