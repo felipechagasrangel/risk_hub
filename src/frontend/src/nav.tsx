@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { IconName } from "./components/icons";
+import SensitivitiesPage from "./pages/market/SensitivitiesPage";
 import VaRPage from "./pages/market/VaRPage";
 import PortfolioPage from "./pages/market/PortfolioPage";
 import StressPage from "./pages/market/StressPage";
@@ -41,6 +42,7 @@ export const NAV: NavGroup[] = [
     { to: "/fundamentos/instrumentos", label: "Catálogo de instrumentos", el: <InstrumentsPage /> },
   ] },
   { group: "Risco de Mercado", icon: "chart", tone: "var(--tone-market)", items: [
+    { to: "/mercado/sensibilidades", label: "Sensibilidades e fatores", el: <SensitivitiesPage /> },
     { to: "/mercado/var", label: "VaR e Expected Shortfall", el: <VaRPage /> },
     { to: "/mercado/carteira", label: "Diversificação", el: <PortfolioPage /> },
     { to: "/mercado/stress", label: "Stress testing", el: <StressPage /> },

@@ -18,7 +18,7 @@ export function CodeSnippet({ name, caption, open = false }: { name: string; cap
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    get<Source>(`/xva/source/${name}`).then(setSource).catch((e: Error) => setError(e.message));
+    get<Source>(`/source/${name}`).then(setSource).catch((e: Error) => setError(e.message));
   }, [name]);
 
   const copy = async () => {

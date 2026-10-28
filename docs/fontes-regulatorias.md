@@ -44,6 +44,14 @@ estrangeiras.
   [FAQ do BCB, versão 2.0](https://www.bcb.gov.br/content/estabilidadefinanceira/regulacao_prudencial_docs/FAQ_FRTB_Fase1_Jul22.pdf).
   A Resolução BCB nº 470/2025 revoga apenas o art. 20 da nº 111.
 
+## Sensibilidades — `src/backend/core/sensitivities.py`
+
+- Curvas pré e cupom de IPCA em convenção exponencial base 252; cupom cambial linear base 360 (DC ≈ anos × 365).
+- Dólar a termo F = S·(1+pré)^(DU/252)/(1+cupom·DC/360); call de dólar por Black sobre o termo.
+- NTN-F com cupom de 10% a.a. e NTN-B com 6% a.a., semestrais, sobre o valor de face e o VNA corrente.
+- DV01 por vértice com interpolação linear (choque triangular); delta, gamma e vega por diferenças
+  centrais de 1% e 1 ponto; P&L explain por expansão de Taylor de 2ª ordem no dólar.
+
 ## XVA — `src/backend/core/xva.py`
 
 - Modelos: GBM (solução exata) e Hull-White de 1 fator com curva flat (transição exata do processo de

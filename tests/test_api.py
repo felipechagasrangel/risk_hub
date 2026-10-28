@@ -75,9 +75,9 @@ def test_swap_and_floating_endpoints():
 def test_xva_endpoints_and_source_whitelist():
     assert client.post("/api/xva/paths", json={"model": "gbm", "n_paths": 500}).status_code == 200
     assert client.post("/api/xva/run", json={"instrument": "ndf", "n_paths": 500}).status_code == 200
-    src = client.get("/api/xva/source/cva")
+    src = client.get("/api/source/cva")
     assert src.status_code == 200 and src.json()["code"].startswith("def cva(")
-    assert client.get("/api/xva/source/__import__").status_code == 404
+    assert client.get("/api/source/__import__").status_code == 404
 
 
 def test_csa_endpoint():
@@ -94,3 +94,11 @@ def test_quote_and_margin_grid_endpoints():
     assert g.status_code == 200
     body = g.json()
     assert len(body["matrix"]) == 4 and len(body["matrix"][0]["cells"]) == 5
+
+
+def test_sensitivities_endpoint_and_snippet():
+    r = client.post("/api/market/sensitivities", json={"instrument": "portfolio"})
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body["dv01"]) == {"pre", "cupom", "ipca"} and len(body["positions"]) == 6
+    assert client.get("/api/source/key_rate_dv01").json()["module"] == "backend.core.sensitivities"

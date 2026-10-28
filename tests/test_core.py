@@ -2,7 +2,7 @@ from math import exp, isclose
 
 import numpy as np
 
-from backend.core import capital, irrbb, liquidity, market, rwa_sens, stress, valuation, xva
+from backend.core import capital, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
 
 
 def test_parametric_var_matches_textbook():
@@ -270,3 +270,46 @@ def test_quote_with_csa_is_tighter_than_without():
     assert q["with_csa"]["cva"] < q["no_csa"]["cva"]
     assert q["with_csa"]["fca"] == 0
     assert q["no_csa"]["quote"] > q["with_csa"]["quote"] > q["par_rate"] - 1e-4
+
+
+MKT = sensitivities.flat_market(pre=0.14, cupom=0.05, ipca=0.07, spot=5.4, vol=0.15)
+
+
+def test_ltn_key_rate_dv01_sits_on_its_vertex_and_matches_duration():
+    pos = sensitivities.default_positions("ltn", 1e6, 2.0, MKT)
+    dv01 = sensitivities.key_rate_dv01(pos, MKT)["pre"]
+    k = list(sensitivities.VERTICES).index(2.0)
+    assert all(abs(v) < 1e-9 for i, v in enumerate(dv01) if i != k)
+    pv = sensitivities.portfolio_value(pos, MKT)
+    assert isclose(dv01[k], -2.0 * pv / 1.14 * 1e-4, rel_tol=1e-3)  # duration modificada × PV × 1 bp
+
+
+def test_derivatives_start_at_zero_and_ndf_has_three_factors():
+    for kind in ("swap_fx", "ndf"):
+        pos = sensitivities.default_positions(kind, 1e7, 2.0, MKT)
+        assert abs(sensitivities.portfolio_value(pos, MKT)) < 1e-6
+    ndf = sensitivities.default_positions("ndf", 1e7, 2.0, MKT)
+    dv01 = sensitivities.key_rate_dv01(ndf, MKT)
+    assert sum(dv01["pre"]) > 0 > sum(dv01["cupom"])  # comprado em dólar a termo
+    greeks = sensitivities.fx_and_vol_greeks(ndf, MKT)
+    usd = ndf[0]["notional"]
+    assert isclose(greeks["delta_fx"], usd * 5.4 * 0.01 * sensitivities.df_cupom(MKT, 2.0), rel_tol=1e-9)
+    assert abs(greeks["gamma_fx"]) < 1e-6 and abs(greeks["vega"]) < 1e-9
+
+
+def test_swap_fx_has_no_pre_risk():
+    pos = sensitivities.default_positions("swap_fx", 1e7, 3.0, MKT)
+    dv01 = sensitivities.key_rate_dv01(pos, MKT)
+    assert all(abs(v) < 1e-6 for v in dv01["pre"])
+    assert sum(dv01["cupom"]) < 0
+
+
+def test_call_greeks_and_pnl_explain_convexity():
+    call = sensitivities.default_positions("call_fx", 1e7, 1.0, MKT)
+    g = sensitivities.fx_and_vol_greeks(call, MKT)
+    ndf = sensitivities.fx_and_vol_greeks(sensitivities.default_positions("ndf", 1e7, 1.0, MKT), MKT)
+    assert 0 < g["delta_fx"] < ndf["delta_fx"] and g["gamma_fx"] > 0 and g["vega"] > 0
+    ltn = sensitivities.default_positions("ltn", 1e6, 5.0, MKT)
+    shocks = {"pre": 300, "cupom": 0, "ipca": 0, "fx_pct": 0, "vol_pts": 0}
+    res = sensitivities.pnl_explain(ltn, MKT, shocks)
+    assert res["full"] < 0 and res["unexplained"] > 0  # convexidade: perde menos que o linear

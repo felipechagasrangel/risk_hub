@@ -1,4 +1,3 @@
-import inspect
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
@@ -7,22 +6,6 @@ from pydantic import BaseModel, Field
 from backend.core import xva
 
 router = APIRouter(prefix="/xva", tags=["XVA"])
-
-# Funções cujo código-fonte pode ser exibido nas páginas (snippets).
-SNIPPETS = {f.__name__: f for f in (
-    xva.simulate_gbm, xva.simulate_hull_white, xva.hw_zero_bond, xva.swap_mtm, xva.ndf_mtm,
-    xva.swap_periodic_mtm, xva.fixed_rate_sensitivity, xva.quote_run, xva.lookback_index,
-    xva.apply_collateral, xva.margin_calls, xva.exposure_profile, xva.epe_and_eepe, xva.default_probabilities,
-    xva.cva, xva.dva, xva.fva, xva.initial_margin_swap, xva.mva,
-)}
-
-
-@router.get("/source/{name}")
-def source(name: str):
-    if name not in SNIPPETS:
-        raise HTTPException(404, "Snippet não disponível")
-    return {"name": name, "module": "backend.core.xva", "code": inspect.getsource(SNIPPETS[name])}
-
 
 class PathsRequest(BaseModel):
     model: Literal["gbm", "hw"] = "hw"
