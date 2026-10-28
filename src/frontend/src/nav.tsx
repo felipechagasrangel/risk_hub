@@ -6,6 +6,9 @@ import PortfolioPage from "./pages/market/PortfolioPage";
 import StressPage from "./pages/market/StressPage";
 import RWAPage from "./pages/capital/RWAPage";
 import IRBPage from "./pages/capital/IRBPage";
+import CapitalStructurePage from "./pages/capital/CapitalStructurePage";
+import LiquidityGapPage from "./pages/liquidity/LiquidityGapPage";
+import BehavioralPage from "./pages/irrbb/BehavioralPage";
 import RWASensPage from "./pages/market/RWASensPage";
 import LCRPage from "./pages/liquidity/LCRPage";
 import NSFRPage from "./pages/liquidity/NSFRPage";
@@ -48,6 +51,7 @@ export const NAV: NavGroup[] = [
   { group: "Risco de Capital", icon: "shield", tone: "var(--tone-capital)", items: [
     { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },
     { to: "/capital/irb", label: "Modelo IRB", el: <IRBPage /> },
+    { to: "/capital/pr-alavancagem", label: "Composição do PR e alavancagem", el: <CapitalStructurePage /> },
   ] },
   { group: "Risco de Crédito", icon: "coins", tone: "var(--tone-credit)", items: [
     { to: "/credito/perda-esperada", label: "Perda esperada (Res. 4.966)", el: <ExpectedLossPage /> },
@@ -56,6 +60,7 @@ export const NAV: NavGroup[] = [
   { group: "Risco de Liquidez", icon: "drop", tone: "var(--tone-liquidity)", items: [
     { to: "/liquidez/lcr", label: "LCR", el: <LCRPage /> },
     { to: "/liquidez/nsfr", label: "NSFR", el: <NSFRPage /> },
+    { to: "/liquidez/gap-ftp", label: "Gap de liquidez e FTP", el: <LiquidityGapPage /> },
   ] },
   { group: "Risco de Mercado", icon: "chart", tone: "var(--tone-market)", items: [
     { to: "/mercado/sensibilidades", label: "Sensibilidades e fatores", el: <SensitivitiesPage /> },
@@ -66,6 +71,7 @@ export const NAV: NavGroup[] = [
   ] },
   { group: "IRRBB", icon: "wave", tone: "var(--tone-irrbb)", items: [
     { to: "/irrbb", label: "ΔEVE e ΔNII", el: <IRRBBPage /> },
+    { to: "/irrbb/comportamental", label: "Modelagem comportamental", el: <BehavioralPage /> },
   ] },
   { group: "XVA", icon: "link", tone: "var(--tone-xva)", items: [
     { to: "/xva/monte-carlo", label: "Monte Carlo: GBM, HW e HJM", el: <MonteCarloPage /> },

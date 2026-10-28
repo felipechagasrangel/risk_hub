@@ -117,3 +117,23 @@ estrangeiras.
 
 - Resolução CMN nº 4.958/2021: RWA, mínimos de capital e adicionais.
 - Fórmula IRB de Basileia (CRE31), conferida contra o valor de referência PD 1%, LGD 45%, M 2,5 → FPR ≈ 92,3%.
+
+## Composição do PR e alavancagem — `src/backend/core/capital_structure.py`
+
+- Resolução CMN nº 4.955/2021: composição do PR (Capital Principal, Complementar e Nível II) e ajustes
+  prudenciais, com os limites de 10% (individual) e 15% (agregado) para créditos tributários de
+  diferenças temporárias e participações relevantes; o que fica abaixo dos limites pondera a 250%.
+- Resolução CMN nº 4.615/2017: Razão de Alavancagem mínima de 3%. A exposição de derivativos usa
+  1,4 × (RC + PFE), como no SA-CCR; a medida é simplificada (sem compensações de SFT).
+
+## Gap de liquidez e FTP — `src/backend/core/liquidity_mgmt.py`
+
+- Faixas de prazo e cenário de estresse inspirados no DLI 2062; percentuais de renovação e de
+  recebimento são ilustrativos, não regulatórios.
+- FTP de base + prêmio de liquidez por prazo: prática de mercado, sem norma específica.
+
+## IRRBB comportamental — `src/backend/core/irrbb_behavioral.py`
+
+- BCBS d368 (tabela 2): tetos de núcleo e prazo médio de depósitos sem vencimento por segmento
+  (90%/5 anos, 70%/4,5 anos, 50%/4 anos), recepcionados pela Circular nº 3.876/2018.
+- Pré-pagamento em CPR/SMM com sensibilidade linear ao incentivo: simplificação didática.

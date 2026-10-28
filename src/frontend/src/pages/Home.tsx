@@ -6,10 +6,10 @@ const DESCRIPTIONS: Record<string, string> = {
   "Fundamentos": "Quanto vale cada posição? Construção da curva de juros (DI1 e cupom cambial), na curva e a mercado, derivativos, contabilidade, hierarquia de preços e a fronteira entre as carteiras.",
   "Risco de Mercado": "Quanto posso perder com preços, taxas e moedas? Sensibilidades por fator de risco, VaR, Expected Shortfall, backtesting, diversificação, stress e o capital por sensibilidades.",
   "XVA": "Quanto custa o risco de contraparte? Monte Carlo com GBM e Hull-White, exposição e PFE, CVA, DVA, FVA e MVA — com o código Python de cada cálculo.",
-  "Risco de Capital": "Quanto capital próprio é preciso para absorver perdas inesperadas? RWA, Índice de Basileia, buffers e a fórmula IRB.",
+  "Risco de Capital": "Quanto capital próprio é preciso para absorver perdas inesperadas? RWA, Índice de Basileia, buffers, a fórmula IRB, a composição do PR com seus ajustes prudenciais e a razão de alavancagem.",
   "Risco de Crédito": "Quanto se espera perder com o crédito concedido? Perda esperada da Res. CMN 4.966: estágios, PD de 12 meses e da vida inteira, cenários e o piso de perda incorrida. SA-CCR, a exposição regulatória de derivativos.",
-  "Risco de Liquidez": "O banco sobrevive a 30 dias de estresse? Sua estrutura de funding é estável em 1 ano? LCR, HQLA e NSFR.",
-  "IRRBB": "Como os juros afetam o valor (ΔEVE) e a margem (ΔNII) da carteira bancária, nos seis cenários de choque de Basileia.",
+  "Risco de Liquidez": "O banco sobrevive a 30 dias de estresse? Sua estrutura de funding é estável em 1 ano? LCR, HQLA e NSFR, o gap de liquidez por prazo com horizonte de sobrevivência e o preço interno do funding (FTP).",
+  "IRRBB": "Como os juros afetam o valor (ΔEVE) e a margem (ΔNII) da carteira bancária, nos seis cenários de choque de Basileia — e como as premissas comportamentais (depósitos sem vencimento e pré-pagamento) mudam esse risco.",
   "Referência": "Os documentos regulatórios (CADOCs) em que cada métrica chega ao BCB e o glossário das siglas.",
 };
 

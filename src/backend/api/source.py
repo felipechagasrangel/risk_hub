@@ -2,7 +2,7 @@ import inspect
 
 from fastapi import APIRouter, HTTPException
 
-from backend.core import credit_loss, curves, saccr, sensitivities, xva
+from backend.core import capital_structure, credit_loss, curves, irrbb_behavioral, liquidity_mgmt, saccr, sensitivities, xva
 
 router = APIRouter(prefix="/source", tags=["Código-fonte"])
 
@@ -18,6 +18,9 @@ SNIPPETS = {f.__name__: f for f in (
     credit_loss.incurred_loss_floor, credit_loss.provision,
     saccr.supervisory_duration, saccr.maturity_factor, saccr.supervisory_delta, saccr.ir_effective_notional,
     saccr.add_ons, saccr.replacement_cost, saccr.multiplier, saccr.saccr_ead, saccr.cem_ead,
+    capital_structure.cet1_build, capital_structure.leverage_exposure,
+    liquidity_mgmt.liquidity_gap, liquidity_mgmt.survival_horizon, liquidity_mgmt.ftp,
+    irrbb_behavioral.nmd_cash_flows, irrbb_behavioral.prepayment_rate, irrbb_behavioral.loan_cash_flows,
     curves.di1_pu, curves.flat_forward, curves.forward_rate, curves.implied_cupom, curves.cupom_curve,
 )}
 

@@ -2,7 +2,7 @@ from math import exp, isclose
 
 import numpy as np
 
-from backend.core import capital, credit_loss, curves, saccr, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
+from backend.core import capital, capital_structure, credit_loss, curves, irrbb_behavioral, liquidity_mgmt, saccr, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
 
 
 def test_parametric_var_matches_textbook():
@@ -403,3 +403,57 @@ def test_saccr_offsetting_and_negative_mtm_reduce_ead():
     assert hedged["add_on"]["aggregate"] < 1e-6 < one["add_on"]["aggregate"]   # mesma faixa: compensa
     underwater = saccr.saccr_ead([{**base, "name": "a", "long": True, "mtm": -50_000}], netting, False)
     assert underwater["multiplier"] < 1 and underwater["ead"] < one["ead"]
+
+
+CAP = dict(share_capital=800, reserves=300, retained_earnings=150, oci=-20, treasury_shares=10, goodwill=60,
+           intangibles=40, dta_tax_losses=30, pension_assets=5, other_deductions=0, dta_temporary=150,
+           significant_investments=70, at1=100, tier2=150, rwa_before_thresholds=9000, total_assets=18000,
+           derivatives_rc=150, derivatives_pfe=250, sft=600,
+           off_balance=[{"name": "x", "amount": 1000, "ccf": 0.5}])
+
+
+def test_cet1_threshold_deductions():
+    r = capital_structure.cet1_build(CAP)
+    base = (800 + 300 + 150 - 20 - 10) - (60 + 40 + 30 + 5)
+    excess_dta = 150 - 0.1 * base                      # créditos temporários acima de 10%
+    remaining = 0.1 * base + 70                        # o que fica abaixo dos limites individuais
+    excess_aggregate = max(remaining - 0.15 * base, 0)
+    assert isclose(r["cet1"], base - excess_dta - excess_aggregate)
+    assert isclose(r["weighted_250"], remaining - excess_aggregate)
+
+
+def test_leverage_ratio():
+    r = capital_structure.run(CAP)
+    exposure = 18000 - r["cet1"]["deducted"] + 1.4 * 400 + 600 + 500
+    assert isclose(r["leverage"]["total"], exposure)
+    assert isclose(r["leverage"]["ratio"], r["tier1"] / exposure)
+
+
+def test_liquidity_gap_and_survival():
+    items = [{"name": "CDB", "kind": "out", "amounts": [0, 100, 0, 0, 0, 0, 0, 0], "stress": 1.0, "base_rollover": 0.8},
+             {"name": "Crédito", "kind": "in", "amounts": [0, 0, 50, 0, 0, 0, 0, 0], "stress": 0.5, "base_rollover": 0}]
+    base = liquidity_mgmt.liquidity_gap(items, buffer=60, buffer_haircut=0.0, stressed=False)
+    stress = liquidity_mgmt.liquidity_gap(items, buffer=60, buffer_haircut=0.0, stressed=True)
+    assert isclose(base["cumulative"][1], 40) and isclose(stress["cumulative"][1], -40)
+    horizon = liquidity_mgmt.survival_horizon(stress["cumulative"], stress["start"])
+    assert 1 < horizon < 30
+    assert liquidity_mgmt.survival_horizon(base["cumulative"], base["start"]) is None
+
+
+def test_ftp_margins():
+    curve = [{"term": 0, "bps": 0}, {"term": 5, "bps": 100}]
+    out = liquidity_mgmt.ftp([{"name": "c", "side": "asset", "amount": 100, "term": 2.5, "client_rate": 0.20},
+                              {"name": "d", "side": "liability", "amount": 100, "term": 2.5, "client_rate": 0.13}],
+                             0.14, curve)
+    assert isclose(out[0]["ftp_rate"], 0.145) and isclose(out[0]["margin"], 0.055)
+    assert isclose(out[1]["margin"], 0.015)
+
+
+def test_nmd_caps_and_prepayment_shortens_duration():
+    flows, info = irrbb_behavioral.nmd_cash_flows(100, "wholesale", 0.9, 1.0, 6.0)
+    assert info["core_share"] == 0.5 and info["avg_maturity"] == 4.0
+    assert isclose(flows.sum(), 100)
+    loan = lambda cpr: irrbb_behavioral.loan_cash_flows(1000, 0.18, 60, cpr)
+    assert isclose(irrbb_behavioral.present_value(loan(0.0), 0.18), 1000, rel_tol=1e-6)
+    assert irrbb_behavioral.macaulay_duration(loan(0.2), 0.14) < irrbb_behavioral.macaulay_duration(loan(0.0), 0.14)
+    assert irrbb_behavioral.prepayment_rate(0.08, 0.03, 0.18, 0.12) > irrbb_behavioral.prepayment_rate(0.08, 0.03, 0.18, 0.18)

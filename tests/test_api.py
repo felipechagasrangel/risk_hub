@@ -128,3 +128,14 @@ def test_saccr_endpoint_margined_is_capped_by_unmargined():
     assert r.status_code == 200
     body = r.json()
     assert body["margined"]["ead"] <= body["unmargined"]["ead"] and body["cem"]["ead"] > 0
+
+
+def test_management_endpoints():
+    assert client.post("/api/capital/structure", json={}).status_code == 200
+    body = {"buffer": 100, "items": [{"name": "x", "kind": "out", "amounts": [0, 10, 0, 0, 0, 0, 0, 0], "stress": 1}],
+            "premium_curve": [{"term": 0, "bps": 0}, {"term": 5, "bps": 100}],
+            "products": [{"name": "c", "side": "asset", "amount": 10, "term": 1, "client_rate": 0.2}]}
+    r = client.post("/api/liquidity/management", json=body)
+    assert r.status_code == 200 and r.json()["survival_stress"] is None
+    b = client.post("/api/irrbb/behavioral", json={})
+    assert b.status_code == 200 and len(b.json()["profile"]) == 13
