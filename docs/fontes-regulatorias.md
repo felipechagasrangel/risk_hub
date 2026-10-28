@@ -44,6 +44,16 @@ estrangeiras.
   [FAQ do BCB, versão 2.0](https://www.bcb.gov.br/content/estabilidadefinanceira/regulacao_prudencial_docs/FAQ_FRTB_Fase1_Jul22.pdf).
   A Resolução BCB nº 470/2025 revoga apenas o art. 20 da nº 111.
 
+## Curvas — `src/backend/core/curves.py`
+
+- DI1: PU = 100.000/(1 + taxa)^(DU/252); a taxa negociada é a taxa zero do vencimento (sem bootstrapping),
+  com o CDI no vértice de 1 DU.
+- Interpolação flat-forward 252 (termo constante entre vértices, extrapolação pelo último termo), comparada
+  com linear nas taxas e spline cúbica natural; a ANBIMA usa Svensson na ETTJ de títulos públicos.
+- Cupom cambial pela paridade coberta, 1 + c·DC/360 = (1 + pré)^(DU/252)·S/F; cupom sujo com a PTAX de D−1;
+  FRC como cupom a termo entre vencimentos. Dados de mercado padrão ilustrativos; DU e DC informados à mão,
+  sem calendário de feriados.
+
 ## Sensibilidades — `src/backend/core/sensitivities.py`
 
 - Curvas pré e cupom de IPCA em convenção exponencial base 252; cupom cambial linear base 360 (DC ≈ anos × 365).

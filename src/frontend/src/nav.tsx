@@ -12,6 +12,7 @@ import NSFRPage from "./pages/liquidity/NSFRPage";
 import IRRBBPage from "./pages/irrbb/IRRBBPage";
 import Glossary from "./pages/Glossary";
 import Cadocs from "./pages/Cadocs";
+import CurvesPage from "./pages/fundamentals/CurvesPage";
 import CurveMtmPage from "./pages/fundamentals/CurveMtmPage";
 import DerivativesPage from "./pages/fundamentals/DerivativesPage";
 import AccountingPage from "./pages/fundamentals/AccountingPage";
@@ -35,6 +36,7 @@ export type NavGroup = {
 
 export const NAV: NavGroup[] = [
   { group: "Fundamentos", icon: "layers", tone: "var(--tone-fund)", items: [
+    { to: "/fundamentos/curva-de-juros", label: "Construção da curva de juros", el: <CurvesPage /> },
     { to: "/fundamentos/curva-mtm", label: "Na curva × a mercado", el: <CurveMtmPage /> },
     { to: "/fundamentos/derivativos", label: "Derivativos", el: <DerivativesPage /> },
     { to: "/fundamentos/contabil", label: "Contabilidade e preços", el: <AccountingPage /> },

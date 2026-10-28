@@ -102,3 +102,13 @@ def test_sensitivities_endpoint_and_snippet():
     body = r.json()
     assert set(body["dv01"]) == {"pre", "cupom", "ipca"} and len(body["positions"]) == 6
     assert client.get("/api/source/key_rate_dv01").json()["module"] == "backend.core.sensitivities"
+
+
+def test_curve_build_endpoint():
+    body = {"contracts": [{"label": "F27", "du": 44, "rate": 0.1485}, {"label": "F28", "du": 296, "rate": 0.141}],
+            "fx": [{"label": "DOLF27", "du": 44, "dc": 65, "price": 5.4856}]}
+    r = client.post("/api/curves/build", json=body)
+    assert r.status_code == 200
+    assert len(r.json()["pre"]["fras"]) == 2 and r.json()["cupom"][0]["frc"] is None
+    bad = client.post("/api/curves/build", json={"contracts": [{"label": "F27", "du": 44, "rate": 0.14}]})
+    assert bad.status_code == 422

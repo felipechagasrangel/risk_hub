@@ -2,7 +2,7 @@ import inspect
 
 from fastapi import APIRouter, HTTPException
 
-from backend.core import sensitivities, xva
+from backend.core import curves, sensitivities, xva
 
 router = APIRouter(prefix="/source", tags=["Código-fonte"])
 
@@ -14,6 +14,7 @@ SNIPPETS = {f.__name__: f for f in (
     xva.default_probabilities, xva.cva, xva.dva, xva.fva, xva.initial_margin_swap, xva.mva,
     sensitivities.price, sensitivities.key_rate_dv01, sensitivities.fx_and_vol_greeks,
     sensitivities.pnl_explain, sensitivities.forward_fx,
+    curves.di1_pu, curves.flat_forward, curves.forward_rate, curves.implied_cupom, curves.cupom_curve,
 )}
 
 

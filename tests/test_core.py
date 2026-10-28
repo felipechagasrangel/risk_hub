@@ -2,7 +2,7 @@ from math import exp, isclose
 
 import numpy as np
 
-from backend.core import capital, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
+from backend.core import capital, curves, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
 
 
 def test_parametric_var_matches_textbook():
@@ -313,3 +313,29 @@ def test_call_greeks_and_pnl_explain_convexity():
     shocks = {"pre": 300, "cupom": 0, "ipca": 0, "fx_pct": 0, "vol_pts": 0}
     res = sensitivities.pnl_explain(ltn, MKT, shocks)
     assert res["full"] < 0 and res["unexplained"] > 0  # convexidade: perde menos que o linear
+
+
+DU = np.array([1, 44, 105, 168, 296, 547.0])
+RATES = np.array([0.149, 0.1485, 0.147, 0.1445, 0.141, 0.137])
+
+
+def test_flat_forward_hits_nodes_and_keeps_forward_constant():
+    for d, r in zip(DU, RATES):
+        assert isclose(curves.flat_forward(DU, RATES, d), r, rel_tol=1e-12)
+    # entre dois vértices, o termo de qualquer subintervalo é o mesmo
+    f_a = curves.forward_rate(curves.flat_forward(DU, RATES, 110), 110, curves.flat_forward(DU, RATES, 120), 120)
+    f_b = curves.forward_rate(curves.flat_forward(DU, RATES, 150), 150, curves.flat_forward(DU, RATES, 160), 160)
+    assert isclose(f_a, f_b, rel_tol=1e-10)
+    assert isclose(f_a, curves.forward_rate(RATES[2], 105, RATES[3], 168), rel_tol=1e-10)
+
+
+def test_spline_passes_through_nodes():
+    s = curves.natural_spline(DU, RATES)
+    assert all(isclose(s(d), r, abs_tol=1e-12) for d, r in zip(DU, RATES))
+
+
+def test_di1_pu_and_implied_cupom_round_trip():
+    assert isclose(curves.di1_pu(0.14, 252), 100_000 / 1.14)
+    pre, du, dc, cupom, spot = 0.145, 168, 246, 0.051, 5.40
+    future = spot * (1 + pre) ** (du / 252) / (1 + cupom * dc / 360)
+    assert isclose(curves.implied_cupom(spot, future, pre, du, dc), cupom, rel_tol=1e-12)
