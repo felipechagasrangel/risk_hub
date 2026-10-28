@@ -112,3 +112,11 @@ def test_curve_build_endpoint():
     assert len(r.json()["pre"]["fras"]) == 2 and r.json()["cupom"][0]["frc"] is None
     bad = client.post("/api/curves/build", json={"contracts": [{"label": "F27", "du": 44, "rate": 0.14}]})
     assert bad.status_code == 422
+
+
+def test_ecl_endpoint():
+    r = client.post("/api/credit/ecl", json={"days_past_due": 45})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["current"]["stage"] == 2 and body["ecl_lifetime"] > body["ecl_12m"]
+    assert len(body["curve"]) == 145

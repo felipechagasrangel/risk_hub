@@ -44,6 +44,18 @@ estrangeiras.
   [FAQ do BCB, versão 2.0](https://www.bcb.gov.br/content/estabilidadefinanceira/regulacao_prudencial_docs/FAQ_FRTB_Fase1_Jul22.pdf).
   A Resolução BCB nº 470/2025 revoga apenas o art. 20 da nº 111.
 
+## Perda esperada — `src/backend/core/credit_loss.py`
+
+- Resolução CMN nº 4.966/2021 e Resolução BCB nº 352/2023, vigentes desde 1º/1/2025
+  ([texto da Res. BCB 352](https://www.legisweb.com.br/legislacao/?id=452307)).
+- Estágios: aumento significativo presumido com atraso acima de 30 dias (art. 38, § 7º; até 60 dias com
+  evidência, § 8º); ativo com problema de recuperação com atraso acima de 90 dias (art. 3º, I); falência de
+  pessoa jurídica com 100% de provisão (art. 77).
+- Carteiras C1 a C5 (art. 81) e níveis mínimos para perda incorrida em ativos inadimplidos (art. 76 e
+  Anexo I), aplicáveis às instituições do art. 1º, II; a provisão é o maior entre a perda esperada e o piso.
+- Simplificações: PD anual constante, LGD constante, cenários como multiplicadores da PD e critério de piora
+  da PD por razão simples (cada instituição define o seu).
+
 ## Curvas — `src/backend/core/curves.py`
 
 - DI1: PU = 100.000/(1 + taxa)^(DU/252); a taxa negociada é a taxa zero do vencimento (sem bootstrapping),

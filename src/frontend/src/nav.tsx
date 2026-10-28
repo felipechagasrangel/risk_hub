@@ -12,6 +12,7 @@ import NSFRPage from "./pages/liquidity/NSFRPage";
 import IRRBBPage from "./pages/irrbb/IRRBBPage";
 import Glossary from "./pages/Glossary";
 import Cadocs from "./pages/Cadocs";
+import ExpectedLossPage from "./pages/credit/ExpectedLossPage";
 import CurvesPage from "./pages/fundamentals/CurvesPage";
 import CurveMtmPage from "./pages/fundamentals/CurveMtmPage";
 import DerivativesPage from "./pages/fundamentals/DerivativesPage";
@@ -46,6 +47,9 @@ export const NAV: NavGroup[] = [
   { group: "Risco de Capital", icon: "shield", tone: "var(--tone-capital)", items: [
     { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },
     { to: "/capital/irb", label: "Modelo IRB", el: <IRBPage /> },
+  ] },
+  { group: "Risco de Crédito", icon: "coins", tone: "var(--tone-credit)", items: [
+    { to: "/credito/perda-esperada", label: "Perda esperada (Res. 4.966)", el: <ExpectedLossPage /> },
   ] },
   { group: "Risco de Liquidez", icon: "drop", tone: "var(--tone-liquidity)", items: [
     { to: "/liquidez/lcr", label: "LCR", el: <LCRPage /> },

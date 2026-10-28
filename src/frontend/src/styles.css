@@ -40,6 +40,7 @@
   --tone-irrbb: #b8471a;
   --tone-ref: #6b6a65;
   --tone-xva: #a8336b;
+  --tone-credit: #8a5a00;
 
   /* Código */
   --code-bg: #f7f7f4;
@@ -89,6 +90,7 @@
     --tone-irrbb: #ef8a5f;
     --tone-ref: #a9a79f;
   --tone-xva: #ee8fb9;
+  --tone-credit: #e0b45c;
   --code-bg: #121211;
   --code-text: #e6e4dd;
   --code-keyword: #c49bf5;
@@ -134,6 +136,7 @@
   --tone-irrbb: #ef8a5f;
   --tone-ref: #a9a79f;
   --tone-xva: #ee8fb9;
+  --tone-credit: #e0b45c;
   --code-bg: #121211;
   --code-text: #e6e4dd;
   --code-keyword: #c49bf5;

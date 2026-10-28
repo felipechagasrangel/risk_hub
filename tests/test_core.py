@@ -2,7 +2,7 @@ from math import exp, isclose
 
 import numpy as np
 
-from backend.core import capital, curves, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
+from backend.core import capital, credit_loss, curves, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
 
 
 def test_parametric_var_matches_textbook():
@@ -339,3 +339,36 @@ def test_di1_pu_and_implied_cupom_round_trip():
     pre, du, dc, cupom, spot = 0.145, 168, 246, 0.051, 5.40
     future = spot * (1 + pre) ** (du / 252) / (1 + cupom * dc / 360)
     assert isclose(curves.implied_cupom(spot, future, pre, du, dc), cupom, rel_tol=1e-12)
+
+
+def test_stage_rules_follow_days_and_pd_deterioration():
+    assert credit_loss.stage(0, 0.04, 0.04, 2.5) == 1
+    assert credit_loss.stage(30, 0.04, 0.04, 2.5) == 1
+    assert credit_loss.stage(31, 0.04, 0.04, 2.5) == 2       # presunção de 30 dias
+    assert credit_loss.stage(0, 0.10, 0.04, 2.5) == 2        # PD 2,5× maior
+    assert credit_loss.stage(91, 0.04, 0.04, 2.5) == 3       # problema de recuperação
+    assert credit_loss.stage(0, 0.04, 0.04, 2.5, problem_signal=True) == 3
+
+
+def test_expected_loss_bullet_matches_closed_form_and_lifetime_exceeds_12m():
+    ead = credit_loss.exposure_schedule(1000, 12, 0.0, amortizing=False)
+    assert isclose(credit_loss.expected_loss(ead, 0.05, 0.5, 0.0, 12), 1000 * 0.5 * 0.05)
+    ead = credit_loss.exposure_schedule(1000, 60, 0.2, amortizing=True)
+    assert credit_loss.expected_loss(ead, 0.05, 0.5, 0.2, 60) > credit_loss.expected_loss(ead, 0.05, 0.5, 0.2, 12)
+
+
+def test_incurred_loss_floor_annex_i():
+    assert credit_loss.incurred_loss_floor("C5", 90) == 0
+    assert credit_loss.incurred_loss_floor("C5", 91) == 0.50     # menos de 1 mês de inadimplência
+    assert credit_loss.incurred_loss_floor("C1", 125) == 0.10    # 1 a 2 meses
+    assert credit_loss.incurred_loss_floor("C3", 2000) == 1.0    # topo da tabela
+
+
+def test_provision_is_max_of_ecl_and_floor_in_stage_3():
+    p = dict(balance=1000, remaining_months=24, rate=0.2, amortizing=True, portfolio="C1", pd_origination=0.03,
+             pd_now=0.03, lgd=0.2, sicr_multiple=2.5, problem_signal=False,
+             scenarios=[{"name": "Base", "weight": 1, "pd_multiplier": 1}])
+    early = credit_loss.provision(p, 100)    # C1 < 1 mês: piso 5,5% < LGD 20% → vale a ECL
+    assert early["stage"] == 3 and isclose(early["provision"], 200)
+    late = credit_loss.provision(p, 400)     # ~10 meses: piso 50,5% > 20% → vale o piso
+    assert isclose(late["provision"], late["floor"]) and late["floor"] > late["ecl"]
