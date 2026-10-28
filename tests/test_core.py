@@ -225,3 +225,17 @@ def test_cva_with_flat_exposure_matches_closed_form():
     ee = np.full(len(times), 100.0)
     total, _ = xva.cva(times, ee, spread=0.03, recovery=0.4)
     assert isclose(total, 0.6 * 100 * (1 - exp(-0.05 * 2)))  # λ = 3% / 60% = 5%
+
+
+def test_margin_calls_respect_threshold_mta_and_rounding():
+    values = np.array([0, 400, 1200, 1350, 2000, 900, -1500.0])
+    out = xva.margin_calls(values, threshold=500, mta=200, rounding=100, independent_amount=0, lag_steps=0)
+    held = out["collateral"]
+    assert held[1] == 0                      # abaixo do threshold: nada
+    assert held[2] == 700                    # 1200 − 500
+    assert held[3] == 700                    # faltariam 150 < MTA: sem chamada
+    assert held[4] == 1500                   # 2000 − 500
+    assert held[6] == -1000                  # banco passa a entregar: −1500 + 500
+    assert all(abs(a) % 100 == 0 for _, a in out["transfers"])
+    # exposição residual nunca passa de threshold + MTA quando não há atraso
+    assert out["exposure"].max() <= 500 + 200

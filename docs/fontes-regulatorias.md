@@ -50,6 +50,8 @@ estrangeiras.
   Ornstein-Uhlenbeck e zero-cupom fechado); o HJM é apresentado só conceitualmente.
 - Exposição: EE, ENE, PFE, EPE e EEPE como no método de modelos internos de Basileia (CRE53), com
   EAD = 1,4 × EEPE; MPOR de 10 dias úteis para derivativos bilaterais.
+- CSA: chamadas de margem com threshold, MTA, arredondamento, valor independente e atraso de entrega
+  (`margin_calls`); regras de margem BCBS-IOSCO para derivativos não compensados citadas no texto.
 - CVA unilateral com intensidade constante λ = s/(1 − R), sem wrong-way risk; DVA simétrico; capital de
   CVA por BA-CVA e SA-CVA (MAR50) citado apenas no texto.
 - FVA (FCA/FBA) e MVA com margem inicial paramétrica (VaR de 10 dias a 99% sobre o delta), em lugar do

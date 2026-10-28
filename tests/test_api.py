@@ -78,3 +78,10 @@ def test_xva_endpoints_and_source_whitelist():
     src = client.get("/api/xva/source/cva")
     assert src.status_code == 200 and src.json()["code"].startswith("def cva(")
     assert client.get("/api/xva/source/__import__").status_code == 404
+
+
+def test_csa_endpoint():
+    r = client.post("/api/xva/csa", json={})
+    assert r.status_code == 200
+    s = r.json()["summary"]
+    assert s["max_exposure"] < s["max_exposure_uncoll"]

@@ -11,7 +11,7 @@ router = APIRouter(prefix="/xva", tags=["XVA"])
 # Funções cujo código-fonte pode ser exibido nas páginas (snippets).
 SNIPPETS = {f.__name__: f for f in (
     xva.simulate_gbm, xva.simulate_hull_white, xva.hw_zero_bond, xva.swap_mtm, xva.ndf_mtm,
-    xva.apply_collateral, xva.exposure_profile, xva.epe_and_eepe, xva.default_probabilities,
+    xva.apply_collateral, xva.margin_calls, xva.exposure_profile, xva.epe_and_eepe, xva.default_probabilities,
     xva.cva, xva.dva, xva.fva, xva.initial_margin_swap, xva.mva,
 )}
 
@@ -71,3 +71,27 @@ class XVARequest(BaseModel):
 @router.post("/run")
 def compute_xva(req: XVARequest):
     return xva.xva_run(req.model_dump())
+
+
+class CSARequest(BaseModel):
+    notional: float = Field(50_000_000, gt=0)
+    maturity: float = Field(3, gt=0, le=15)
+    horizon: float = Field(1.5, gt=0, le=5, description="Anos de trajetória simulada")
+    rate: float = Field(0.14, gt=-0.05, lt=1)
+    fixed_rate: float = Field(0.14, gt=-0.05, lt=1)
+    hw_a: float = Field(0.15, gt=0, le=5)
+    hw_sigma: float = Field(0.02, gt=0, lt=0.2)
+    receive: bool = True
+    threshold: float = Field(1_000_000, ge=0)
+    mta: float = Field(250_000, ge=0)
+    rounding: float = Field(50_000, ge=0)
+    independent_amount: float = Field(0, ge=0)
+    lag_days: int = Field(1, ge=0, le=20)
+    seed: int = 21
+
+
+@router.post("/csa")
+def compute_csa(req: CSARequest):
+    if req.horizon > req.maturity:
+        raise HTTPException(422, "O horizonte simulado não pode passar do vencimento do swap")
+    return xva.csa_run(req.model_dump())

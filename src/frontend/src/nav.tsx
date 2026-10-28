@@ -17,6 +17,7 @@ import AccountingPage from "./pages/fundamentals/AccountingPage";
 import BooksPage from "./pages/fundamentals/BooksPage";
 import InstrumentsPage from "./pages/fundamentals/InstrumentsPage";
 import MonteCarloPage from "./pages/xva/MonteCarloPage";
+import CsaPage from "./pages/xva/CsaPage";
 import ExposurePage from "./pages/xva/ExposurePage";
 import CvaPage from "./pages/xva/CvaPage";
 import FundingPage from "./pages/xva/FundingPage";
@@ -45,6 +46,7 @@ export const NAV: NavGroup[] = [
   ] },
   { group: "XVA", icon: "link", tone: "var(--tone-xva)", items: [
     { to: "/xva/monte-carlo", label: "Monte Carlo: GBM, HW e HJM", el: <MonteCarloPage /> },
+    { to: "/xva/csa", label: "CSA e colateral", el: <CsaPage /> },
     { to: "/xva/exposicao", label: "Exposição e PFE", el: <ExposurePage /> },
     { to: "/xva/cva", label: "CVA e DVA", el: <CvaPage /> },
     { to: "/xva/fva-mva", label: "FVA, MVA e XVA total", el: <FundingPage /> },

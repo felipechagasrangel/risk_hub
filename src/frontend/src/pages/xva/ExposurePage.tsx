@@ -45,8 +45,9 @@ export default function ExposurePage() {
         soma dos contratos com a contraparte, não contrato a contrato — e <M>{String.raw`\max(\sum V_i, 0) \le \sum \max(V_i, 0)`}</M>.
       </p>
       <p>
-        <strong>Colateral (margem de variação)</strong>: num CSA, a parte devedora deposita garantias à medida que o MTM
-        se move. Mesmo assim sobra exposição, por dois motivos:
+        <strong>Colateral (margem de variação)</strong>: num <Link to="/xva/csa">CSA</Link>, a parte devedora deposita
+        garantias à medida que o MTM se move. Mesmo assim sobra exposição — pelo threshold e pelo período de risco de
+        margem. A simulação de exposição usa esta versão simplificada do CSA:
       </p>
       <Formula tex={String.raw`C(t) = \operatorname{sinal}\big(V(t-\text{MPOR})\big)\cdot\max\big(|V(t - \text{MPOR})| - H,\; 0\big), \qquad E(t) = \max\big(V(t) - C(t),\; 0\big)`} where={[[String.raw`C(t)`, "colateral em mãos na data t"], [String.raw`H`, "threshold: exposição que a contraparte pode ter antes de precisar depositar"], [String.raw`\text{MPOR}`, "período de risco de margem: o tempo entre a última margem paga e o encerramento das posições após o default (10 dias úteis para derivativos bilaterais)"], [String.raw`V(t - \text{MPOR})`, "o MTM sobre o qual a última chamada de margem foi feita"]]} />
       <CodeSnippet name="apply_collateral" caption="CSA bilateral com threshold e MPOR" />

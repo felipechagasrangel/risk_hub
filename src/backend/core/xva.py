@@ -103,6 +103,34 @@ def apply_collateral(values: np.ndarray, threshold: float, mpor_steps: int) -> n
     return values - collateral
 
 
+def margin_calls(values: np.ndarray, threshold: float, mta: float, rounding: float,
+                 independent_amount: float, lag_steps: int) -> dict:
+    """Chamadas de margem de um CSA bilateral ao longo de uma trajetória de MTM.
+
+    Em cada dia, o valor de garantia exigido é o MTM (apurado `lag_steps` dias antes) além do
+    threshold. A transferência só ocorre se a diferença para o saldo atual for de pelo menos
+    o valor mínimo de transferência (MTA), e é arredondada para múltiplos de `rounding`.
+    Colateral positivo = recebido pelo banco; negativo = entregue pelo banco.
+    """
+    n = len(values)
+    held = np.zeros(n)
+    balance = 0.0
+    transfers = []
+    for t in range(n):
+        observed = values[max(t - lag_steps, 0)] if t >= lag_steps else 0.0
+        required = np.sign(observed) * max(abs(observed) - threshold, 0.0)
+        delivery = required - balance
+        if abs(delivery) >= mta and delivery != 0:
+            amount = np.round(delivery / rounding) * rounding if rounding > 0 else delivery
+            if amount != 0:
+                balance += amount
+                transfers.append((t, float(amount)))
+        held[t] = balance
+    # O valor independente (IA) é depositado pela contraparte no início e não entra nas chamadas
+    exposure = np.maximum(values - held - independent_amount, 0.0)
+    return {"collateral": held, "exposure": exposure, "transfers": transfers}
+
+
 def exposure_profile(values: np.ndarray, discount: np.ndarray, quantile: float) -> dict:
     """Perfis de exposição ao longo do tempo, a partir do MTM por trajetória."""
     positive = np.maximum(values, 0.0)
@@ -270,4 +298,28 @@ def xva_run(p: dict) -> dict:
             "mva": mva_total, "total": cva_total - dva_total + fca - fba + mva_total,
         },
         "cva_buckets": [{"t": float(times[i + 1]), "cva": float(c)} for i, c in enumerate(cva_buckets)],
+    }
+
+
+def csa_run(p: dict) -> dict:
+    """Uma trajetória diária do swap DI × pré e as chamadas de margem do CSA sobre ela."""
+    times = time_grid(p["horizon"], steps_per_year=252)
+    r0 = to_continuous(p["rate"])
+    r, integral = simulate_hull_white(r0, p["hw_a"], p["hw_sigma"], times, 1, p["seed"])
+    values = swap_mtm(times, r, integral, p["notional"], p["fixed_rate"], p["maturity"],
+                      r0, p["hw_a"], p["hw_sigma"], p["receive"])[0]
+    csa = margin_calls(values, p["threshold"], p["mta"], p["rounding"],
+                       p["independent_amount"], p["lag_days"])
+    uncollateralized = np.maximum(values, 0.0)
+    return {
+        "series": [{"t": float(t), "mtm": float(v), "collateral": float(c), "exposure": float(e)}
+                   for t, v, c, e in zip(times, values, csa["collateral"], csa["exposure"])],
+        "transfers": [{"t": float(times[i]), "amount": a} for i, a in csa["transfers"]],
+        "summary": {
+            "n_transfers": len(csa["transfers"]),
+            "max_exposure_uncoll": float(uncollateralized.max()),
+            "max_exposure": float(csa["exposure"].max()),
+            "avg_exposure_uncoll": float(uncollateralized.mean()),
+            "avg_exposure": float(csa["exposure"].mean()),
+        },
     }
