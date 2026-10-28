@@ -1,6 +1,8 @@
 from math import exp, isclose
 
-from backend.core import capital, irrbb, liquidity, market, rwa_sens, stress, valuation
+import numpy as np
+
+from backend.core import capital, irrbb, liquidity, market, rwa_sens, stress, valuation, xva
 
 
 def test_parametric_var_matches_textbook():
@@ -187,3 +189,39 @@ def test_swap_cdi_leg_has_no_marking_and_fixed_leg_carries_it():
     assert up["unrealized"] < 0 and up["dv01"] < 0  # recebe pré: perde com alta de juros
     payer = valuation.swap_di_pre(1000, 504, 126, 0.13, 0.14, 0.15, receive_fixed=False)
     assert isclose(payer["value_mtm"], -up["value_mtm"])
+
+
+def test_gbm_mean_matches_analytic():
+    times = xva.time_grid(2)
+    paths = xva.simulate_gbm(100, 0.05, 0.2, times, 20_000, 1)
+    assert isclose(paths[:, -1].mean(), 100 * exp(0.05 * 2), rel_tol=0.01)
+
+
+def test_hull_white_reprices_initial_curve():
+    times = xva.time_grid(5)
+    r, integral = xva.simulate_hull_white(0.12, 0.15, 0.02, times, 20_000, 2)
+    assert isclose(np.exp(-integral[:, -1]).mean(), exp(-0.12 * 5), rel_tol=0.005)
+    # o zero-cupom do modelo em t = 0 é a curva inicial
+    assert isclose(float(xva.hw_zero_bond(0, 5, 0.12, 0.12, 0.15, 0.02)), exp(-0.12 * 5))
+
+
+def test_par_swap_starts_near_zero_and_collateral_cuts_exposure():
+    base = {"instrument": "swap", "receive": True, "notional": 1e6, "maturity": 3, "rate": 0.14,
+            "fixed_rate": 0.14, "hw_a": 0.15, "hw_sigma": 0.02, "spot": 5, "strike": 5,
+            "foreign_rate": 0.04, "fx_vol": 0.15, "pfe_quantile": 0.975, "collateral": False,
+            "threshold": 0, "mpor_days": 10, "cpty_spread": 0.02, "cpty_recovery": 0.4,
+            "own_spread": 0.01, "own_recovery": 0.4, "funding_spread": 0.01, "lend_spread": 0.003,
+            "initial_margin": True,
+            "n_paths": 3000, "seed": 3}
+    res = xva.xva_run(base)
+    assert abs(res["mtm0"]) < 1e-6 * 1e6
+    assert res["metrics"]["cva"] > 0 and res["metrics"]["mva"] > 0
+    coll = xva.xva_run({**base, "collateral": True})
+    assert coll["metrics"]["cva"] < 0.5 * res["metrics"]["cva"]
+
+
+def test_cva_with_flat_exposure_matches_closed_form():
+    times = xva.time_grid(2)
+    ee = np.full(len(times), 100.0)
+    total, _ = xva.cva(times, ee, spread=0.03, recovery=0.4)
+    assert isclose(total, 0.6 * 100 * (1 - exp(-0.05 * 2)))  # λ = 3% / 60% = 5%

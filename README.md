@@ -2,7 +2,8 @@
 
 Site didático para aprender conceitos de risco bancário: **fundamentos** (curva × MTM, categorias contábeis,
 hierarquia de preços, carteira de negociação × bancária), **mercado** (VaR, ES, backtesting, stress testing,
-diversificação, RWA SENS), **capital** (RWA, Índice de Basileia, IRB), **liquidez** (LCR, NSFR) e
+diversificação, RWA SENS), **XVA** (Monte Carlo com GBM e Hull-White, PFE, CVA, DVA,
+FVA, MVA, com o código Python de cada cálculo), **capital** (RWA, Índice de Basileia, IRB), **liquidez** (LCR, NSFR) e
 **IRRBB** (ΔEVE, ΔNII, gap de repricing), além dos CADOCs em que cada métrica é reportada ao BCB.
 
 Cada página tem a intuição, as fórmulas e um laboratório interativo; os cálculos ficam
@@ -44,6 +45,9 @@ Frontend (porta 5173, faz proxy de `/api` para o backend):
 ```bash
 npm --prefix src/frontend run dev
 ```
+
+Se a porta 8000 estiver ocupada por outro projeto, suba o backend com `--port 8001` e informe a porta
+ao frontend pela variável `API_PORT` (no PowerShell: `$env:API_PORT = "8001"` antes do `npm run dev`).
 
 Testes:
 

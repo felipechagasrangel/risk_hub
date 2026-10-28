@@ -5,6 +5,7 @@ import { NAV } from "../nav";
 const DESCRIPTIONS: Record<string, string> = {
   "Fundamentos": "Quanto vale cada posição? Na curva e a mercado, derivativos, contabilidade, hierarquia de preços e a fronteira entre as carteiras.",
   "Risco de Mercado": "Quanto posso perder com preços, taxas e moedas? VaR, Expected Shortfall, backtesting, diversificação, stress e o capital por sensibilidades.",
+  "XVA": "Quanto custa o risco de contraparte? Monte Carlo com GBM e Hull-White, exposição e PFE, CVA, DVA, FVA e MVA — com o código Python de cada cálculo.",
   "Capital": "Quanto capital próprio é preciso para absorver perdas inesperadas? RWA, Índice de Basileia, buffers e a fórmula IRB.",
   "Liquidez": "O banco sobrevive a 30 dias de estresse? Sua estrutura de funding é estável em 1 ano? LCR, HQLA e NSFR.",
   "IRRBB": "Como os juros afetam o valor (ΔEVE) e a margem (ΔNII) da carteira bancária, nos seis cenários de choque de Basileia.",

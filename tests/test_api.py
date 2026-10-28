@@ -70,3 +70,11 @@ def test_swap_and_floating_endpoints():
     assert client.post("/api/valuation/swap", json={}).status_code == 200
     assert client.post("/api/valuation/floating", json={}).status_code == 200
     assert client.post("/api/valuation/swap", json={"elapsed_du": 600}).status_code == 422
+
+
+def test_xva_endpoints_and_source_whitelist():
+    assert client.post("/api/xva/paths", json={"model": "gbm", "n_paths": 500}).status_code == 200
+    assert client.post("/api/xva/run", json={"instrument": "ndf", "n_paths": 500}).status_code == 200
+    src = client.get("/api/xva/source/cva")
+    assert src.status_code == 200 and src.json()["code"].startswith("def cva(")
+    assert client.get("/api/xva/source/__import__").status_code == 404

@@ -17,6 +17,8 @@ const PATHS = {
   drop: "M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z",
   wave: "M2 12c2.5-4 5-4 7.5 0s5 4 7.5 0 3.5-2.7 5-1.5",
   book: "M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h8",
+  code: "M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16",
+  link: "M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1",
 } as const;
 
 export type IconName = keyof typeof PATHS;

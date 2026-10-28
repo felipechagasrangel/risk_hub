@@ -16,6 +16,10 @@ import DerivativesPage from "./pages/fundamentals/DerivativesPage";
 import AccountingPage from "./pages/fundamentals/AccountingPage";
 import BooksPage from "./pages/fundamentals/BooksPage";
 import InstrumentsPage from "./pages/fundamentals/InstrumentsPage";
+import MonteCarloPage from "./pages/xva/MonteCarloPage";
+import ExposurePage from "./pages/xva/ExposurePage";
+import CvaPage from "./pages/xva/CvaPage";
+import FundingPage from "./pages/xva/FundingPage";
 
 export type NavGroup = {
   group: string;
@@ -38,6 +42,12 @@ export const NAV: NavGroup[] = [
     { to: "/mercado/carteira", label: "Diversificação", el: <PortfolioPage /> },
     { to: "/mercado/stress", label: "Stress testing", el: <StressPage /> },
     { to: "/mercado/rwa-sens", label: "RWA SENS: GIRR e FX", el: <RWASensPage /> },
+  ] },
+  { group: "XVA", icon: "link", tone: "var(--tone-xva)", items: [
+    { to: "/xva/monte-carlo", label: "Monte Carlo: GBM, HW e HJM", el: <MonteCarloPage /> },
+    { to: "/xva/exposicao", label: "Exposição e PFE", el: <ExposurePage /> },
+    { to: "/xva/cva", label: "CVA e DVA", el: <CvaPage /> },
+    { to: "/xva/fva-mva", label: "FVA, MVA e XVA total", el: <FundingPage /> },
   ] },
   { group: "Capital", icon: "shield", tone: "var(--tone-capital)", items: [
     { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },

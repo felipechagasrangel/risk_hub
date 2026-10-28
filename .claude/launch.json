@@ -4,13 +4,15 @@
     {
       "name": "backend",
       "runtimeExecutable": ".venv/Scripts/python.exe",
-      "runtimeArgs": ["-m", "uvicorn", "backend.main:app", "--reload", "--app-dir", "src", "--port", "8000"],
-      "port": 8000
+      "runtimeArgs": ["-m", "uvicorn", "backend.main:app", "--reload", "--app-dir", "src", "--port", "8001"],
+      "port": 8001,
+      "autoPort": false
     },
     {
       "name": "frontend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "src/frontend", "run", "dev"],
+      "env": { "API_PORT": "8001" },
       "port": 5173
     }
   ]

@@ -44,6 +44,17 @@ estrangeiras.
   [FAQ do BCB, versão 2.0](https://www.bcb.gov.br/content/estabilidadefinanceira/regulacao_prudencial_docs/FAQ_FRTB_Fase1_Jul22.pdf).
   A Resolução BCB nº 470/2025 revoga apenas o art. 20 da nº 111.
 
+## XVA — `src/backend/core/xva.py`
+
+- Modelos: GBM (solução exata) e Hull-White de 1 fator com curva flat (transição exata do processo de
+  Ornstein-Uhlenbeck e zero-cupom fechado); o HJM é apresentado só conceitualmente.
+- Exposição: EE, ENE, PFE, EPE e EEPE como no método de modelos internos de Basileia (CRE53), com
+  EAD = 1,4 × EEPE; MPOR de 10 dias úteis para derivativos bilaterais.
+- CVA unilateral com intensidade constante λ = s/(1 − R), sem wrong-way risk; DVA simétrico; capital de
+  CVA por BA-CVA e SA-CVA (MAR50) citado apenas no texto.
+- FVA (FCA/FBA) e MVA com margem inicial paramétrica (VaR de 10 dias a 99% sobre o delta), em lugar do
+  ISDA SIMM.
+
 ## CADOCs — `src/frontend/src/pages/Cadocs.tsx`
 
 - [Leiaute de arquivos e base normativa](https://www.bcb.gov.br/estabilidadefinanceira/leiautedocumentoscrd):

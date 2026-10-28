@@ -14,6 +14,12 @@ export async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json();
 }
 
+export async function get<T>(path: string): Promise<T> {
+  const res = await fetch(`/api${path}`);
+  if (!res.ok) throw new Error(`Erro ${res.status}`);
+  return res.json();
+}
+
 /** Chama a API sempre que `body` muda (com debounce), para os laboratórios reagirem em tempo real. */
 export function useCompute<T>(path: string, body: unknown, delay = 250) {
   const [data, setData] = useState<T | null>(null);
