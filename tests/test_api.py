@@ -120,3 +120,11 @@ def test_ecl_endpoint():
     body = r.json()
     assert body["current"]["stage"] == 2 and body["ecl_lifetime"] > body["ecl_12m"]
     assert len(body["curve"]) == 145
+
+
+def test_saccr_endpoint_margined_is_capped_by_unmargined():
+    trades = [{"name": "NDF", "kind": "fx_forward", "notional": 1e7, "end": 1, "long": True, "mtm": 2e5}]
+    r = client.post("/api/credit/saccr", json={"trades": trades, "netting": {"margined": True, "threshold": 5e6}})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["margined"]["ead"] <= body["unmargined"]["ead"] and body["cem"]["ead"] > 0

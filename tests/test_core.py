@@ -2,7 +2,7 @@ from math import exp, isclose
 
 import numpy as np
 
-from backend.core import capital, credit_loss, curves, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
+from backend.core import capital, credit_loss, curves, saccr, irrbb, liquidity, market, rwa_sens, sensitivities, stress, valuation, xva
 
 
 def test_parametric_var_matches_textbook():
@@ -372,3 +372,34 @@ def test_provision_is_max_of_ecl_and_floor_in_stage_3():
     assert early["stage"] == 3 and isclose(early["provision"], 200)
     late = credit_loss.provision(p, 400)     # ~10 meses: piso 50,5% > 20% → vale o piso
     assert isclose(late["provision"], late["floor"]) and late["floor"] > late["ecl"]
+
+
+def test_saccr_supervisory_parameters():
+    assert isclose(saccr.supervisory_duration(0, 5), (1 - exp(-0.25)) / 0.05)
+    assert saccr.maturity_factor(3, False, 10) == 1.0                       # sem margem: limitado a 1 ano
+    assert isclose(saccr.maturity_factor(0.25, False, 10), 0.5)
+    assert isclose(saccr.maturity_factor(3, True, 10), 1.5 * (10 / 250) ** 0.5)  # com margem: MPOR
+    call = {"kind": "fx_option", "long": True, "option": "call", "moneyness": 1.0, "end": 1.0}
+    assert 0.5 < saccr.supervisory_delta(call) < 0.56                          # ATM: um pouco acima de 0,5
+    assert isclose(saccr.supervisory_delta({**call, "long": False}), -saccr.supervisory_delta(call))
+
+
+def test_saccr_single_swap_matches_hand_calculation():
+    swap = {"name": "s", "kind": "ir_swap", "notional": 1e6, "start": 0, "end": 5, "long": True, "mtm": 0,
+            "currency": "BRL", "pair": "", "option": "call", "moneyness": 1}
+    netting = {"margined": False, "collateral": 0, "threshold": 0, "mta": 0, "nica": 0, "mpor_days": 10}
+    res = saccr.saccr_ead([swap], netting, margined=False)
+    add_on = 0.005 * 1e6 * saccr.supervisory_duration(0, 5)
+    assert isclose(res["add_on"]["aggregate"], add_on)
+    assert res["multiplier"] == 1.0 and isclose(res["ead"], 1.4 * add_on)
+
+
+def test_saccr_offsetting_and_negative_mtm_reduce_ead():
+    base = {"kind": "ir_swap", "notional": 1e6, "start": 0, "end": 3, "mtm": 0, "currency": "BRL",
+            "pair": "", "option": "call", "moneyness": 1}
+    netting = {"margined": False, "collateral": 0, "threshold": 0, "mta": 0, "nica": 0, "mpor_days": 10}
+    one = saccr.saccr_ead([{**base, "name": "a", "long": True}], netting, False)
+    hedged = saccr.saccr_ead([{**base, "name": "a", "long": True}, {**base, "name": "b", "long": False}], netting, False)
+    assert hedged["add_on"]["aggregate"] < 1e-6 < one["add_on"]["aggregate"]   # mesma faixa: compensa
+    underwater = saccr.saccr_ead([{**base, "name": "a", "long": True, "mtm": -50_000}], netting, False)
+    assert underwater["multiplier"] < 1 and underwater["ead"] < one["ead"]

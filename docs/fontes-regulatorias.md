@@ -56,6 +56,16 @@ estrangeiras.
 - Simplificações: PD anual constante, LGD constante, cenários como multiplicadores da PD e critério de piora
   da PD por razão simples (cada instituição define o seu).
 
+## SA-CCR — `src/backend/core/saccr.py`
+
+- Basileia CRE52: EAD = 1,4 × (RC + PFE); duration supervisória, delta supervisório (Black com vol de 15%
+  em câmbio e 50% em juros), fator de prazo com e sem margem, três faixas de juros com correlações de 70% e
+  30%, fatores supervisórios de 0,5% (juros) e 4% (câmbio), multiplicador com piso de 5%.
+- Circular nº 3.904/2018: SA-CCR obrigatório no S1, CEM permitido do S2 ao S4; compilações indicam a
+  incorporação à Resolução BCB nº 229/2022 a partir de julho de 2023 (não confirmado em fonte oficial).
+- CEM com fatores de Basileia e netting pela NGR. Simplificações: um conjunto de netting, sem haircut de
+  colateral, sem as classes de crédito, ações e mercadorias no cálculo.
+
 ## Curvas — `src/backend/core/curves.py`
 
 - DI1: PU = 100.000/(1 + taxa)^(DU/252); a taxa negociada é a taxa zero do vencimento (sem bootstrapping),
