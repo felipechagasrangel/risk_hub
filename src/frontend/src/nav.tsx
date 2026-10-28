@@ -21,6 +21,8 @@ import CsaPage from "./pages/xva/CsaPage";
 import ExposurePage from "./pages/xva/ExposurePage";
 import CvaPage from "./pages/xva/CvaPage";
 import FundingPage from "./pages/xva/FundingPage";
+import QuotePage from "./pages/xva/QuotePage";
+import MarginGridPage from "./pages/xva/MarginGridPage";
 
 export type NavGroup = {
   group: string;
@@ -50,6 +52,8 @@ export const NAV: NavGroup[] = [
     { to: "/xva/exposicao", label: "Exposição e PFE", el: <ExposurePage /> },
     { to: "/xva/cva", label: "CVA e DVA", el: <CvaPage /> },
     { to: "/xva/fva-mva", label: "FVA, MVA e XVA total", el: <FundingPage /> },
+    { to: "/xva/cotacao", label: "Cotação com e sem CSA", el: <QuotePage /> },
+    { to: "/xva/margem-grade", label: "Margem × discretização", el: <MarginGridPage /> },
   ] },
   { group: "Capital", icon: "shield", tone: "var(--tone-capital)", items: [
     { to: "/capital/rwa", label: "RWA e Índice de Basileia", el: <RWAPage /> },

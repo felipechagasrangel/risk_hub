@@ -85,3 +85,12 @@ def test_csa_endpoint():
     assert r.status_code == 200
     s = r.json()["summary"]
     assert s["max_exposure"] < s["max_exposure_uncoll"]
+
+
+def test_quote_and_margin_grid_endpoints():
+    q = client.post("/api/xva/quote", json={"n_paths": 500, "maturity": 2})
+    assert q.status_code == 200 and q.json()["payments"] == 4
+    g = client.post("/api/xva/margin-grid", json={"n_paths": 300, "maturity": 1})
+    assert g.status_code == 200
+    body = g.json()
+    assert len(body["matrix"]) == 4 and len(body["matrix"][0]["cells"]) == 5

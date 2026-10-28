@@ -11,6 +11,7 @@ router = APIRouter(prefix="/xva", tags=["XVA"])
 # Funções cujo código-fonte pode ser exibido nas páginas (snippets).
 SNIPPETS = {f.__name__: f for f in (
     xva.simulate_gbm, xva.simulate_hull_white, xva.hw_zero_bond, xva.swap_mtm, xva.ndf_mtm,
+    xva.swap_periodic_mtm, xva.fixed_rate_sensitivity, xva.quote_run, xva.lookback_index,
     xva.apply_collateral, xva.margin_calls, xva.exposure_profile, xva.epe_and_eepe, xva.default_probabilities,
     xva.cva, xva.dva, xva.fva, xva.initial_margin_swap, xva.mva,
 )}
@@ -95,3 +96,43 @@ def compute_csa(req: CSARequest):
     if req.horizon > req.maturity:
         raise HTTPException(422, "O horizonte simulado não pode passar do vencimento do swap")
     return xva.csa_run(req.model_dump())
+
+
+class SwapScenarioRequest(BaseModel):
+    notional: float = Field(10_000_000, gt=0)
+    maturity: float = Field(5, gt=0, le=10)
+    per_year: Literal[0, 1, 2, 4] = Field(2, description="Fluxos por ano; 0 = bullet")
+    rate: float = Field(0.14, gt=-0.05, lt=1, description="Taxa pré de mercado; o swap é contratado a par")
+    hw_a: float = Field(0.15, gt=0, le=5)
+    hw_sigma: float = Field(0.02, gt=0, lt=0.2)
+    receive: bool = True
+    cpty_spread: float = Field(0.02, ge=0, lt=1)
+    cpty_recovery: float = Field(0.4, ge=0, lt=1)
+    threshold: float = Field(0, ge=0)
+    mpor_days: int = Field(10, ge=0, le=60)
+    seed: int = 7
+
+
+class QuoteRequest(SwapScenarioRequest):
+    own_spread: float = Field(0.01, ge=0, lt=1)
+    own_recovery: float = Field(0.4, ge=0, lt=1)
+    funding_spread: float = Field(0.01, ge=0, lt=1)
+    lend_spread: float = Field(0.003, ge=0, lt=1)
+    initial_margin: bool = True
+    n_paths: int = Field(4_000, ge=200, le=20_000)
+
+
+@router.post("/quote")
+def compute_quote(req: QuoteRequest):
+    return xva.quote_run(req.model_dump())
+
+
+class GridRequest(SwapScenarioRequest):
+    rounding: Literal["nearest", "floor"] = "nearest"
+    profile_freq: Literal["Diária", "Semanal", "Quinzenal", "Mensal", "Sem CSA"] = "Semanal"
+    n_paths: int = Field(1_500, ge=200, le=5_000)
+
+
+@router.post("/margin-grid")
+def compute_margin_grid(req: GridRequest):
+    return xva.margin_grid_run(req.model_dump())

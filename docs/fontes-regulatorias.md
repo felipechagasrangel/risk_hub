@@ -54,6 +54,9 @@ estrangeiras.
   (`margin_calls`); regras de margem BCBS-IOSCO para derivativos não compensados citadas no texto.
 - CVA unilateral com intensidade constante λ = s/(1 − R), sem wrong-way risk; DVA simétrico; capital de
   CVA por BA-CVA e SA-CVA (MAR50) citado apenas no texto.
+- Swap pré × CDI com fluxos periódicos em fórmula fechada no Hull-White; cotação com e sem CSA convertendo
+  o XVA em taxa por ∂V/∂K; estudo de frequência de verificação do CSA × passo da simulação, com a data
+  de apuração t − MPOR arredondada na grade (`lookback_index`).
 - FVA (FCA/FBA) e MVA com margem inicial paramétrica (VaR de 10 dias a 99% sobre o delta), em lugar do
   ISDA SIMM.
 

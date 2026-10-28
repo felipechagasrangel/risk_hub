@@ -239,3 +239,34 @@ def test_margin_calls_respect_threshold_mta_and_rounding():
     assert all(abs(a) % 100 == 0 for _, a in out["transfers"])
     # exposição residual nunca passa de threshold + MTA quando não há atraso
     assert out["exposure"].max() <= 500 + 200
+
+
+def test_periodic_swap_is_at_par_and_bullet_matches_before_maturity():
+    times = xva.time_grid(3, 52)
+    r0 = xva.to_continuous(0.14)
+    r, integral = xva.simulate_hull_white(r0, 0.15, 0.02, times, 400, 1)
+    bullet_old = xva.swap_mtm(times, r, integral, 1e6, 0.14, 3, r0, 0.15, 0.02, True)
+    bullet_new = xva.swap_periodic_mtm(times, r, integral, 1e6, 0.14, xva.payment_dates(3, 0), r0, 0.15, 0.02, True)
+    # iguais até a véspera; no vencimento a nova convenção já descontou o fluxo pago
+    assert np.allclose(bullet_old[:, :-1], bullet_new[:, :-1])
+    semi = xva.swap_periodic_mtm(times, r, integral, 1e6, 0.14, xva.payment_dates(3, 2), r0, 0.15, 0.02, True)
+    assert abs(semi[:, 0].mean()) < 1e-6  # taxa de mercado = taxa par
+
+
+def test_lookback_rounding_on_coarse_grid():
+    # Grade diária: a última chamada (diária) antes de um default no dia 100 com MPOR 10 é o dia 90
+    assert xva.lookback_index(100, 10, 1, 1, "nearest") == 90
+    # Grade mensal (21 dias), dia 105: dia 95 arredonda para 105 (o próprio dia: sem atraso!) ou 84
+    assert xva.lookback_index(105, 10, 1, 21, "nearest") == 105
+    assert xva.lookback_index(105, 10, 1, 21, "floor") == 84
+    assert xva.lookback_index(5, 10, 1, 1, "nearest") is None
+
+
+def test_quote_with_csa_is_tighter_than_without():
+    p = dict(notional=1e7, maturity=3, per_year=2, rate=0.14, hw_a=0.15, hw_sigma=0.02, receive=True,
+             cpty_spread=0.02, cpty_recovery=0.4, own_spread=0.01, own_recovery=0.4, funding_spread=0.01,
+             lend_spread=0.003, threshold=0, mpor_days=10, initial_margin=False, n_paths=1500, seed=3)
+    q = xva.quote_run(p)
+    assert q["with_csa"]["cva"] < q["no_csa"]["cva"]
+    assert q["with_csa"]["fca"] == 0
+    assert q["no_csa"]["quote"] > q["with_csa"]["quote"] > q["par_rate"] - 1e-4

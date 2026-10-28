@@ -82,6 +82,65 @@ def swap_mtm(times: np.ndarray, r: np.ndarray, integral: np.ndarray, notional: f
     return values
 
 
+def payment_dates(maturity: float, per_year: int) -> np.ndarray:
+    """Datas de pagamento de um swap com fluxos periódicos (0 = bullet, só no vencimento)."""
+    if per_year == 0:
+        return np.array([maturity])
+    n = int(round(maturity * per_year))
+    return np.arange(1, n + 1) / per_year
+
+
+def swap_periodic_mtm(times: np.ndarray, r: np.ndarray, integral: np.ndarray, notional: float,
+                      fixed_rate: float, pay: np.ndarray, r0: float, a: float, sigma: float,
+                      receive_fixed: bool) -> np.ndarray:
+    """MTM de um swap pré × CDI com fluxos periódicos, logo após os pagamentos de cada data.
+
+    Ponta pré: Σ N·[(1+K)^τᵢ − 1]·P(t, Tᵢ) sobre os fluxos que ainda faltam.
+    Ponta CDI: N·[e^(∫r desde o último fixing) − P(t, Tₙ)] — o CDI já corrido no período
+    corrente mais os períodos futuros, que somados viram 1 − P(t, Tₙ).
+    """
+    sign = 1.0 if receive_fixed else -1.0
+    starts = np.concatenate([[0.0], pay[:-1]])
+    coupons = notional * ((1 + fixed_rate) ** (pay - starts) - 1)
+    grid_index = {round(float(t), 9): i for i, t in enumerate(times)}
+    values = np.empty_like(r)
+    for i, t in enumerate(times):
+        k = np.searchsorted(pay, t + 1e-9)  # primeiro pagamento ainda por vir
+        if k == len(pay):
+            values[:, i] = 0.0
+            continue
+        last_fixing = starts[k] if k > 0 else 0.0
+        accrued = np.exp(integral[:, i] - integral[:, grid_index[round(float(last_fixing), 9)]])
+        fixed_leg = sum(coupons[j] * hw_zero_bond(t, pay[j], r[:, i], r0, a, sigma) for j in range(k, len(pay)))
+        float_leg = notional * (accrued - hw_zero_bond(t, pay[-1], r[:, i], r0, a, sigma))
+        values[:, i] = sign * (fixed_leg - float_leg)
+    return values
+
+
+def fixed_rate_sensitivity(notional: float, fixed_rate: float, pay: np.ndarray, r0: float) -> float:
+    """∂V/∂K em t = 0 para quem recebe pré: converte um ajuste em R$ num ajuste de taxa."""
+    starts = np.concatenate([[0.0], pay[:-1]])
+    tau = pay - starts
+    return float(notional * np.sum(tau * (1 + fixed_rate) ** (tau - 1) * np.exp(-r0 * pay)))
+
+
+def initial_margin_periodic(times: np.ndarray, r: np.ndarray, notional: float, fixed_rate: float,
+                            pay: np.ndarray, r0: float, a: float, sigma: float) -> np.ndarray:
+    """IM paramétrica do swap com fluxos: 99% de 10 dias sobre o delta líquido das duas pontas."""
+    starts = np.concatenate([[0.0], pay[:-1]])
+    coupons = notional * ((1 + fixed_rate) ** (pay - starts) - 1)
+    im = np.zeros_like(r)
+    for i, t in enumerate(times):
+        k = np.searchsorted(pay, t + 1e-9)
+        if k == len(pay):
+            continue
+        b = lambda T: (1 - np.exp(-a * (T - t))) / a
+        fixed_delta = sum(coupons[j] * b(pay[j]) * hw_zero_bond(t, pay[j], r[:, i], r0, a, sigma) for j in range(k, len(pay)))
+        float_delta = notional * b(pay[-1]) * hw_zero_bond(t, pay[-1], r[:, i], r0, a, sigma)
+        im[:, i] = Z_99 * np.abs(fixed_delta - float_delta) * sigma * sqrt(MARGIN_HORIZON)
+    return im
+
+
 def ndf_mtm(times: np.ndarray, spot: np.ndarray, notional_usd: float, strike: float,
             maturity: float, r_dom: float, r_for: float, long_usd: bool) -> np.ndarray:
     """MTM do NDF: N · [S(t) e^(−r_f (T−t)) − K e^(−r_d (T−t))], com sinal da posição."""
@@ -323,3 +382,110 @@ def csa_run(p: dict) -> dict:
             "avg_exposure": float(csa["exposure"].mean()),
         },
     }
+
+
+def _swap_scenarios(p: dict, steps_per_year: int):
+    """Simula o Hull-White e o MTM do swap a par com fluxos periódicos (ou bullet)."""
+    times = time_grid(p["maturity"], steps_per_year)
+    r0 = to_continuous(p["rate"])
+    r, integral = simulate_hull_white(r0, p["hw_a"], p["hw_sigma"], times, p["n_paths"], p["seed"])
+    pay = payment_dates(p["maturity"], p["per_year"])
+    values = swap_periodic_mtm(times, r, integral, p["notional"], p["rate"], pay,
+                               r0, p["hw_a"], p["hw_sigma"], p["receive"])
+    return times, r, integral, pay, r0, values
+
+
+def quote_run(p: dict) -> dict:
+    """Cotação de um swap a par sem CSA e com CSA: XVA em R$ e em bps sobre a taxa pré.
+
+    Sem CSA: CVA, DVA e FVA sobre a exposição cheia. Com CSA (margem de variação em caixa,
+    remunerada ao CDI): CVA e DVA residuais do MPOR, sem FVA, e MVA se houver margem inicial.
+    """
+    times, r, integral, pay, r0, values = _swap_scenarios(p, 52)
+    discount = np.exp(-integral)
+    mpor_steps = int(round(p["mpor_days"] / 5))
+    sensitivity = fixed_rate_sensitivity(p["notional"], p["rate"], pay, r0)
+
+    def adjustments(exposed: np.ndarray, with_csa: bool) -> dict:
+        prof = exposure_profile(exposed, discount, 0.975)
+        cva_total, _ = cva(times, prof["ee_disc"], p["cpty_spread"], p["cpty_recovery"])
+        dva_total = dva(times, prof["ene_disc"], p["own_spread"], p["own_recovery"])
+        fca, fba = (0.0, 0.0) if with_csa else fva(times, prof["ee_disc"], prof["ene_disc"],
+                                                     p["funding_spread"], p["lend_spread"])
+        mva_total = 0.0
+        if with_csa and p["initial_margin"]:
+            im = initial_margin_periodic(times, r, p["notional"], p["rate"], pay, r0, p["hw_a"], p["hw_sigma"])
+            mva_total = mva(times, im, discount, p["funding_spread"])
+        total = cva_total - dva_total + fca - fba + mva_total
+        bps = total / sensitivity * 10_000
+        # Quem recebe pré cobra uma taxa maior; quem paga pré oferece uma taxa menor
+        quote = p["rate"] + (bps if p["receive"] else -bps) / 10_000
+        return {"cva": cva_total, "dva": dva_total, "fca": fca, "fba": fba, "mva": mva_total,
+                "total": total, "bps": bps, "quote": quote, "ee": prof["ee"], "pfe": prof["pfe"]}
+
+    no_csa = adjustments(values, False)
+    with_csa = adjustments(apply_collateral(values, p["threshold"], mpor_steps), True)
+    idx = _downsample(times)
+    return {
+        "par_rate": p["rate"],
+        "sensitivity": sensitivity,
+        "payments": len(pay),
+        "no_csa": {k: v for k, v in no_csa.items() if k not in ("ee", "pfe")},
+        "with_csa": {k: v for k, v in with_csa.items() if k not in ("ee", "pfe")},
+        "profile": [{"t": float(times[i]), "ee_no_csa": float(no_csa["ee"][i]), "ee_csa": float(with_csa["ee"][i]),
+                     "pfe_no_csa": float(no_csa["pfe"][i]), "pfe_csa": float(with_csa["pfe"][i])} for i in idx],
+    }
+
+
+def lookback_index(day: int, mpor_days: int, call_every: int, grid_step: int, rounding: str) -> int | None:
+    """Data (em dias) da última chamada de margem bem-sucedida antes de um default em `day`.
+
+    A última chamada é a data de verificação mais recente até `day − MPOR`. Numa grade de
+    simulação com passo `grid_step`, essa data pode não existir: é preciso arredondar para a
+    data mais próxima ou para a anterior da grade.
+    """
+    if day - mpor_days < 0:
+        return None
+    last_call = ((day - mpor_days) // call_every) * call_every
+    snapped = round(last_call / grid_step) * grid_step if rounding == "nearest" else (last_call // grid_step) * grid_step
+    return min(snapped, day)
+
+
+def margin_grid_run(p: dict) -> dict:
+    """EPE e CVA para cada combinação de passo de simulação × frequência de verificação do CSA."""
+    times, r, integral, pay, r0, values = _swap_scenarios(p, 252)
+    discount = np.exp(-integral)
+    n_days = len(times) - 1
+    grids = {"Diário": 1, "Semanal": 5, "Quinzenal": 10, "Mensal": 21}
+    frequencies = {"Diária": 1, "Semanal": 5, "Quinzenal": 10, "Mensal": 21, "Sem CSA": None}
+
+    def exposure_on_grid(step: int, call_every: int | None) -> tuple[np.ndarray, np.ndarray]:
+        days = np.arange(0, n_days + 1, step)
+        if days[-1] != n_days:
+            days = np.append(days, n_days)
+        v = values[:, days]
+        if call_every is not None:
+            collateral = np.zeros_like(v)
+            for j, d in enumerate(days):
+                lb = lookback_index(int(d), p["mpor_days"], call_every, step, p["rounding"])
+                if lb is not None:
+                    seen = values[:, lb]
+                    collateral[:, j] = np.sign(seen) * np.maximum(np.abs(seen) - p["threshold"], 0.0)
+            v = v - collateral
+        return days, v
+
+    matrix, profiles = [], {}
+    for grid_name, step in grids.items():
+        row = {"grid": grid_name, "cells": []}
+        for freq_name, call_every in frequencies.items():
+            days, v = exposure_on_grid(step, call_every)
+            t = times[days]
+            prof = exposure_profile(v, discount[:, days], 0.975)
+            cva_total, _ = cva(t, prof["ee_disc"], p["cpty_spread"], p["cpty_recovery"])
+            epe = float(np.trapezoid(prof["ee"], t) / t[-1])
+            row["cells"].append({"freq": freq_name, "epe": epe, "cva": cva_total})
+            if freq_name == p["profile_freq"]:
+                idx = _downsample(t, 150)
+                profiles[grid_name] = [{"t": float(t[i]), "ee": float(prof["ee"][i])} for i in idx]
+        matrix.append(row)
+    return {"frequencies": list(frequencies), "matrix": matrix, "profiles": profiles}
